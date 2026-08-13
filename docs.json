@@ -41,7 +41,9 @@
       {
         "group": "K8S",
         "icon": "box",
-        "pages": []
+        "pages": [
+          "基础运维笔记/userGroup"
+        ]
       }
     ]
   },
