@@ -30,9 +30,9 @@
         }
       ]
     },
-    "anchors": [
+    "dropdowns": [
       {
-        "anchor": "运维笔记",
+        "dropdown": "运维笔记",
         "icon": "cloud",
         "groups": [
           {
@@ -45,7 +45,10 @@
         ]
       },
       {
-        "anchor": "abc"
+        "dropdown": "wer",
+        "pages": [
+          "userGroup"
+        ]
       }
     ]
   },
