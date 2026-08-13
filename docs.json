@@ -56,12 +56,7 @@
     "dark": "/images/fluid.png"
   },
   "navbar": {
-    "links": [],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
+    "links": []
   },
   "contextual": {
     "options": [
