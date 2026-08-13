@@ -24,14 +24,9 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "严千屹博客",
+          "icon": "cloud",
+          "href": "https://blog.qianyios.top"
         }
       ]
     },
@@ -48,6 +43,9 @@
             ]
           }
         ]
+      },
+      {
+        "anchor": "abc"
       }
     ]
   },
