@@ -35,9 +35,10 @@
         }
       ]
     },
-    "languages": [
+    "dropdowns": [
       {
-        "language": "zh-CN",
+        "dropdown": "运维笔记",
+        "icon": "cloud",
         "groups": [
           {
             "group": "基础运维",
