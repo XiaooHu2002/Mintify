@@ -75,5 +75,8 @@
   },
   "styling": {
     "latex": true
+  },
+  "interaction": {
+    "drilldown": false
   }
 }
