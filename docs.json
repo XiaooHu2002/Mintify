@@ -37,6 +37,11 @@
           "基础运维笔记/userGroup",
           "基础运维笔记/filemanage"
         ]
+      },
+      {
+        "group": "K8S",
+        "icon": "box",
+        "pages": []
       }
     ]
   },
