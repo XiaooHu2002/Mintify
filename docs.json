@@ -37,6 +37,7 @@
             "group": "基础运维",
             "icon": "cloud",
             "pages": [
+              "untitled-page",
               "基础运维笔记/filemanage"
             ]
           },
