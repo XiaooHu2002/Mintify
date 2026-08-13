@@ -37,8 +37,9 @@
             "group": "基础运维",
             "icon": "cloud",
             "pages": [
-              "untitled-page",
-              "filemanage"
+              "basic-ops/untitled-page",
+              "basic-ops/filemanage",
+              "untitled-page"
             ]
           },
           {
