@@ -30,11 +30,10 @@
         }
       ]
     },
-    "dropdowns": [
+    "groups": [
       {
-        "dropdown": "运维笔记",
-        "icon": "cloud",
-        "groups": [
+        "group": "运维笔记",
+        "pages": [
           {
             "group": "基础运维",
             "pages": [
@@ -45,9 +44,9 @@
         ]
       },
       {
-        "dropdown": "wer",
+        "group": "abc",
         "pages": [
-          "基础运维笔记/userGroup"
+          "基础运维笔记/filemanage"
         ]
       }
     ]
