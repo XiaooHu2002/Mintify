@@ -1,0 +1,5143 @@
+---
+title: "3.文本处理工具和正则表达式"
+---
+
+## 常用命令行快捷键速查
+
+| 快捷键 | 作用 |
+| --- | --- |
+| `Ctrl + A` | 跳到行首 |
+| `Ctrl + E` | 跳到行尾 |
+| `Ctrl + U` | 删除从光标到行首 |
+| `Ctrl + K` | 删除从光标到行尾 |
+| `Ctrl + C` | 中断当前命令 |
+| `Ctrl + L` | 清屏（同 `clear`） |
+
+## 文本编辑工具之神VIM
+
+**vi**
+
+Visual editor，文本编辑器，是 Linux 必备工具之一，功能强大，学习曲线较陡峭，学习难度大
+
+**vim**
+
+VIsual editor iMproved ，和 vi 使用方法一致，但功能更为强大，不是必备软件
+
+### **三种主要模式和转换**
+
+三种常见模式: 
+
+命令或普通(Normal)模式: 默认模式，可以实现移动光标，剪切/粘贴文本
+
+插入(Insert)或编辑模式: 用于修改文本
+
+扩展命令(extended command )或命令(末)行模式: 保存，退出等
+
+命令模式 --\> 插入模式
+
+```bash
+i insert, 在光标所在处输入
+I 在当前光标所在行的行首输入
+a append, 在光标所在处后面输入
+A 在当前光标所在行的行尾输入
+o 在当前光标所在行的下方打开一个新行
+O 在当前光标所在行的上方打开一个新行
+```
+
+插入模式 --- ESC-----\> 命令模式
+
+命令模式 ---- : ----\> 扩展命令模式
+
+扩展命令模式 ----ESC,enter----\> 命令模式
+
+#### **扩展命令模式**
+
+按`:`进入Ex模式 ，创建一个命令提示符: 处于底部的屏幕左侧
+
+```bash
+w 写（存）磁盘文件
+wq 写入并退出
+x 写入并退出
+X  加密
+q 退出
+q！ 不存盘退出，即使更改都将丢失 
+r  filename 读文件内容到当前文件中
+w  filename 将当前文件内容写入另一个文件
+!command 执行命令
+r!command 读入命令的输出
+```
+
+#### **地址定界格式**
+
+格式
+
+```text
+:start_pos,end_pos CMD
+```
+
+```bash
+#	     #具体第#行，例如2表示第2行
+#,#	   #从左侧#表示起始行，到右侧#表示结尾行 
+#,+#   #从左侧#表示的起始行，加上右侧#表示的行数，范例: 2,+3 表示2到5行
+.     #当前行
+$      #最后一行
+.,$-1  #当前行到倒数第二行
+%      #全文, 相当于1,$
+/pattern/    #从当前行向下查找，直到匹配pattern的第一行,即:正则表达式
+/pat1/,/pat2/ #从第一次被pat1模式匹配到的行开始，一直到第一次被pat2匹配到的行结束
+#,/pat/     #从指定行开始，一直找到第一个匹配pattern的行结束
+/pat/,$     #向下找到第一个匹配patttern的行到整个文件的结尾的所有行
+```
+
+**地址定界后跟一个编辑命令**
+
+```text
+d    #删除
+y       #复制
+w file  #将范围内的行另存至指定文件中
+r file  #在指定位置插入指定文件中的所有内容
+t       #行号   将前面指定的行复制到#行后
+m       #行号   将前面指定的行移动到#行后
+```
+
+#### **查找并替换**
+
+```text
+s/要查找的内容/替换为的内容/修饰符
+```
+
+要查找的内容: 可使用基本正则表达式模式
+
+替换为的内容: 不能使用模式，但可以使用\\1, \\2, ...等后向引用符号；还可以使用“&"引用前面查找时查
+
+找到的整个内容
+
+```text
+i #忽略大小写
+g #全局替换，默认情况下，每一行只替换第一次出现
+gc #全局替换，每次替换前询问
+```
+
+查找替换中的分隔符/可替换为其它字符，如: #,@
+
+例子:
+
+```text
+s@/etc@/var@g
+s#/boot#/#i
+```
+
+#### 定制vim模板
+
+```bash
+sudo tee ~/.vimrc > /dev/null <<'EOF'
+" 基础设置
+set ts=4
+set expandtab
+set cursorline 
+set cursorcolumn
+set ignorecase
+set shiftwidth=4
+autocmd FileType yaml setlocal ai et ts=2 sw=2 
+
+" 编码设置: 启用 UTF-8
+set encoding=utf-8
+set fileencoding=utf-8
+
+" 自动创建 .sh 文件时调用标题函数
+autocmd BufNewFile *.sh call SetTitle()
+
+" 新建任何文件时光标跳至末尾
+autocmd BufNewFile * normal G
+
+" 设置文件头模板
+func! SetTitle()
+    if expand("%:e") == 'sh'
+        " 插入 Shebang 和模板内容
+        call setline(1, "#!/bin/bash")
+        call setline(2, "#")
+        call setline(3, "###############################################")
+        call setline(4, "#Author: 严千屹")
+        call setline(5, "#Date: ".strftime("%Y-%m-%d"))
+        call setline(6, "#FileName: ".expand("%"))
+        call setline(7, "#URL: https://blog.qianyios.top")
+        call setline(8, "#Description: The test script")
+        call setline(9, "#Copyright (C): ".strftime("%Y")." All rights reserved")
+        call setline(10, "###############################################")
+        call setline(11, "")
+    endif
+endfunc
+EOF
+```
+
+#### **命令模式**
+
+命令模式，又称为Normal模式，功能强大，只是此模式输入指令并在屏幕上显示，所以需要记忆大量
+
+的快捷按键才能更好的使用
+
+1.退出VIM
+
+```bash
+ZZ 保存退出
+ZQ 不保存退出
+```
+
+2.光标跳转
+
+字符间跳转
+
+```bash
+h: 左 
+L: 右 
+j: 下 
+k: 上
+#COMMAND: 跳转由#指定的个数的字符
+```
+
+单词间跳转
+
+```bash
+w: 下一个单词的词首
+e: 当前或下一单词的词尾
+b: 当前或前一个单词的词首
+#COMMAND: 由#指定一次跳转的单词数
+```
+
+当前页跳转:
+
+```bash
+H: 页首   
+M: 页中间行   
+L: 页底
+zt: 将光标所在当前行移到屏幕顶端
+zz: 将光标所在当前行移到屏幕中间
+zb: 将光标所在当前行移到屏幕底端
+```
+
+行首行尾跳转:
+
+```bash
+^ 跳转至行首的第一个非空白字符
+0 跳转至行首
+$ 跳转至行尾
+```
+
+行间移动:
+
+```bash
+#G 或者扩展命令模式下 
+:#  跳转至由第#行
+G 最后一行
+1G, gg 第一行
+```
+
+句间移动:
+
+```bash
+) 下一句 
+( 上一句
+```
+
+段落间移动:
+
+```bash
+} 下一段 
+{ 上一段
+```
+
+命令模式翻屏操作
+
+```bash
+Ctrl+f 向文件尾部翻一屏,相当于Pagedown
+Ctrl+b 向文件首部翻一屏,相当于Pageup
+Ctrl+d 向文件尾部翻半屏
+Ctrl+u 向文件首部翻半屏
+```
+
+3.字符编辑
+
+```bash
+x	剪切光标处的字符
+#x 剪切光标处起始的#个字符
+xp 交换光标所在处的字符及其后面字符的位置
+~ 转换大小写
+J 删除当前行后的换行符
+```
+
+4.替换命令(replace)
+
+```bash
+r 只替换光标所在处的一个字符
+R 切换成REPLACE模式（在末行出现-- REPLACE -- 提示）,按ESC回到命令模式
+```
+
+5.删除命令(delete)
+
+```bash
+d 删除命令，可结合光标跳转字符，实现范围删除
+d$ 删除到行尾
+d^ 删除到非空行首
+d0 删除到行首
+dw
+de
+db
+#COMMAND
+dd:   剪切光标所在的行
+#dd 多行删除
+D: 从当前光标位置一直删除到行尾，等同于d$
+```
+
+6.复制命令(yank)
+
+```bash
+y 复制，行为相似于d命令
+y$
+y0
+y^
+ye
+yw
+yb
+#COMMAND
+yy: 复制行
+#yy 复制多行
+Y: 复制整行
+```
+
+7.粘贴命令(paste)
+
+```bash
+p 缓冲区存的如果为整行，则粘贴当前光标所在行的下方；否则，则粘贴至当前光标所在处的后面
+P 缓冲区存的如果为整行，则粘贴当前光标所在行的上方；否则，则粘贴至当前光标所在处的前面
+```
+
+8.改变命令(change)
+
+命令 c 删除后切换成插入模式
+
+```bash
+c$
+c^
+c0
+cb
+ce
+cw
+#COMMAND
+cc #删除当前行并输入新内容，相当于S
+#cc 
+C  #删除当前光标到行尾，并切换成插入模式,相当于c$
+```
+
+9.查找
+
+```bash
+/PATTERN: 从当前光标所在处向文件尾部查找
+?PATTERN: 从当前光标所在处向文件首部查找
+n: 与命令同方向
+N: 与命令反方向
+```
+
+10.撤消更改
+
+```bash
+u 撤销最近的更改，相当于windows中ctrl+z
+#u 撤销之前多次更改
+U 撤消光标落在这行后所有此行的更改
+Ctrl-r 重做最后的“撤消"更改，相当于windows中crtl+y
+. 重复前一个操作
+#. 重复前一个操作#次
+```
+
+11.高级用法
+
+`<start position><command><end position>`
+
+常见Command: y 复制、d 删除、gU 变大写、gu 变小写
+
+范例:
+
+```bash
+0y$ 命令
+0 → 先到行头
+y → 从这里开始拷贝
+$ → 拷贝到本行最后一个字符
+```
+
+范例: 粘贴“wang"100次
+
+```text
+100iwang [ESC]
+```
+
+```bash
+di"  光标在" “之间，则删除" “之间的内容
+yi(  光标在()之间，则复制()之间的内容
+vi[  光标在[]之间，则选中[]之间的内容
+dtx 删除字符直到遇见光标之后的第一个 x 字符
+ytx 复制字符直到遇见光标之后的第一个 x 字符
+```
+
+### 可视化模式
+
+在末行有"-- VISUAL -- “指示，表示在可视化模式
+
+允许选择的文本块
+
+v 面向字符，-- VISUAL --
+
+V 面向整行，-- VISUAL LINE --
+
+ctrl-v 面向块，-- VISUAL BLOCK --
+
+可视化键可用于与移动键结合使用
+
+w ) \} 箭头等
+
+突出显示的文字可被删除，复制，变更，过滤，搜索，替换等
+
+范例: 在文件指定行的行首插入#
+
+```bash
+1、先将光标移动到指定的第一行的行首
+2、输入ctrl+v 进入可视化模式
+3、向下移动光标，选中希望操作的每一行的第一个字符
+4、输入大写字母 I 切换至插入模式
+5、输入 # 
+6、按 ESC 键
+```
+
+范例: 在指定的块位置插入相同的内容
+
+```bash
+1、光标定位到要操作的地方
+2、CTRL+v 进入“可视块"模式，选取这一列操作多少行
+3、SHIFT+i(I)
+4、输入要插入的内容
+5、按 ESC 键
+```
+
+### **多文件模式**
+
+```bash
+vim FILE1 FILE2 FILE3 ...
+:next 下一个
+:prev 前一个
+:first 第一个
+:last 最后一个
+:wall 保存所有
+:qall 不保存退出所有
+:wqall保存退出所有
+```
+
+### 多窗口模式
+
+#### 多文件分割
+
+```bash
+vim -o|-O FILE1 FILE2 ...
+-o: 水平或上下分割
+-O: 垂直或左右分割（vim only）
+在窗口间切换: Ctrl+w, Arrow
+```
+
+#### 单文件窗口分割
+
+```bash
+Ctrl+w,s: split, 水平分割，上下分屏
+Ctrl+w,v: vertical, 垂直分割，左右分屏
+ctrl+w,q: 取消相邻窗口
+ctrl+w,o: 取消全部窗口
+:wqall 退出
+```
+
+#### 帮助
+
+```bash
+:help
+:help topic
+Use :q to exit help
+#vimtutor
+```
+
+## 文本常见处理工具
+
+### 基础文本输出工具 echo
+
+`echo` 用于将文本或变量内容输出到标准输出（屏幕或重定向到文件）。
+
+#### 基本语法：
+
+```bash
+echo [OPTION] [STRING]
+```
+
+常用选项
+
+| 选项 | 含义 |
+| --- | --- |
+| `-n` | **不自动换行**（默认输出后会换行） |
+| `-e` | **启用转义字符**解释（见下表） |
+| `-E` | **禁用转义字符**解释（默认行为） |
+
+支持的转义序列（仅在 `-e` 时生效）
+
+| 转义 | 说明 |
+| --- | --- |
+| `\\` | 反斜杠 `\` |
+| `\a` | 响铃（BEL） |
+| `\b` | 退格（BACKSPACE） |
+| `\c` | 不再输出后续字符，也不换行 |
+| `\e` / `\E` | Escape 字符 |
+| `\f` | 换页（form feed） |
+| `\n` | 换行（newline） |
+| `\r` | 回车（carriage return） |
+| `\t` | 水平制表符（TAB） |
+| `\v` | 垂直制表符 |
+| `\0nnn` | 8 进制 ASCII 字符（`nnn` 为 1–3 位八进制数） |
+| `\xHH` | 16 进制 ASCII 字符（`HH` 为 1–2 位十六进制数） |
+| `\uHHHH` | Unicode 字符（4 位十六进制） |
+| `\UHHHHHHHH` | Unicode 字符（8 位十六进制） |
+
+```bash
+# 1. 输出普通字符串
+echo "Hello, world!"
+
+# 2. 输出变量
+name="Alice"
+echo "My name is $name"
+
+# 3. 不换行
+echo -n "Enter password: "
+
+# 4. 使用转义字符
+echo -e "Line 1\nLine 2\tTabbed"
+
+# 5. 输出 8 进制字符（A 的 ASCII 为 101）
+echo -e "\0101"     # 输出 A
+
+# 6. 输出 16 进制字符（0x41 即 A）
+echo -e "\x41"      # 输出 A
+
+# 7. 输出 Unicode 表情
+echo -e "\U0001F600"  # 😀
+
+# 8. 快速生成文件
+echo -e "line1\nline2" > file.txt
+```
+
+### **文件内容查看命令**
+
+#### 查看文本文件内容
+
+##### **cat**
+
+cat 可以查看文本内容
+
+格式:
+
+```text
+cat [OPTION]... [FILE]...
+```
+
+常见选项
+
+```bash
+-E: 显示行结束符$
+-A: 显示所有控制符
+-n: 对显示出的每一行进行编号
+-b: 非空行编号
+-s: 压缩连续的空行成一行
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cat -A /data/fa.txt
+a  b$
+c $
+d^Ib^Ic$
+[root@centos8 ~]#cat /data/fa.txt
+a  b
+c
+d    b    c
+[root@centos8 ~]#cat /data/fb.txt
+a
+b
+c
+[root@centos8 ~]#hexdump -C /data/fb.txt
+00000000 61 0d 0a 62 0d 0a 63 0d 0a            |a..b..c..|
+00000009
+[root@centos8 ~]#cat -A /data/fb.txt
+a^M$
+b^M$
+c^M$
+[root@centos8 ~]#file /data/fb.txt
+/data/fb.txt: ASCII text, with CRLF line terminators
+```
+
+##### nl
+
+显示行号，相当于cat -b
+
+```bash
+[root@centos8 ~]#cat /data/f1.txt
+a
+b
+c
+d
+e
+f
+g
+h
+[root@centos8 ~]#nl /data/f1.txt
+   1 a
+   2 b
+   3 c
+   4 d
+   5 e
+   6 f
+   7 g
+   8 h
+```
+
+##### tac
+
+逆向显示文本内容
+
+```bash
+[root@centos8 ~]#cat /data/fa.txt
+1
+2
+3
+4
+5
+[root@centos8 ~]#tac /data/fa.txt
+5
+4
+3
+2
+1
+[root@centos8 ~]#tac
+a
+bb
+ccc 按ctrl+d
+ccc
+bb
+a
+[root@centos8 ~]#seq 10 | tac
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+```
+
+##### rev
+
+将同一行的内容逆向显示
+
+```bash
+[root@centos8 ~]#cat /data/fa.txt
+1 2 3 4 5
+a b c
+[root@centos8 ~]#tac /data/fa.txt
+a b c
+1 2 3 4 5
+[root@centos8 ~]#rev /data/fa.txt
+5 4 3 2 1
+c b a
+[root@centos8 ~]#rev
+abcdef
+fedcba
+[root@centos8 ~]#echo {1..10} |rev
+01 9 8 7 6 5 4 3 2 1
+```
+
+#### **查看非文本文件内容**
+
+范例: hexdump
+
+```bash
+hexdump -C -n 512 /dev/sda
+00000000 eb 63 90 10 8e d0 bc 00 b0 b8 00 00 8e d8 8e c0 |.c..............|
+echo {a..z} | tr -d ' '|hexdump -C
+00000000 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 70 |abcdefghijklmnop|
+00000010 71 72 73 74 75 76 77 78 79 7a 0a         |qrstuvwxyz.|
+0000001b
+```
+
+#### **分页查看文件内容**
+
+##### **more**
+
+可以实现分页查看文件，可以配合管道实现输出信息的分页
+
+格式
+
+```text
+more [OPTIONS...] FILE...
+```
+
+选项:
+
+-d: 显示翻页及退出提示   按h键输出帮助菜单
+
+```text
+多数命令可在前面加整数参数 k。方括号中为参数的默认值
+星号(*)表示参数将成为新的默认值。
+-------------------------------------------------------------------------------
+<空格键>                显示下 k 行文本[当前屏幕尺寸]
+z                       显示下 k 行文本[当前屏幕尺寸]*
+<回车键>                显示下 k 行文本[1]*
+d 或 ctrl-D             滚动 k 行[当前滚动尺寸，初始值为 11]*
+q 或 Q 或 <interrupt>   退出 more
+s                       跳过下面 k 行文本[1]
+f                       跳过下面 k 屏文本[1]
+b 或 ctrl-B             跳过上面 k 屏文本 [1]
+'                       转到上次搜索开始处
+=                       显示当前行号
+/<正则表达式>           搜索正则表达式第 k 次出现处[1]
+n                       搜索前一正则表达式第 k 次出现处[1]
+!<cmd> 或 :!<cmd>       在子 shell 中执行 <cmd> 命令
+v                       在当前行启动 /usr/bin/vi
+ctrl-L                  重绘屏幕
+:n                      转到后面第 k 个文件[1]
+:p                      转到前面第 k 个文件 [1]
+:f                      显示当前文件名和行号
+.                       重复前一命令
+```
+
+##### **less**
+
+less 也可以实现分页查看文件或STDIN输出，less 命令是man命令使用的分页器
+
+查看时有用的命令包括:
+
+```text
+/文本 搜索 文本
+n/N 跳到下一个 或 上一个匹配
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#less /etc/init.d/functions
+# -*-Shell-script-*-
+#
+# functions This file contains functions to be used by most or all
+#    shell scripts in the /etc/init.d directory.
+#
+TEXTDOMAIN=initscripts
+# Make sure umask is sane
+umask 022
+# Set up a default search path.
+PATH="/sbin:/usr/sbin:/bin:/usr/bin"
+export PATH
+...省略...
+```
+
+范例:
+
+```bash
+#less 配合管道对其它命令的执行结果进行分页显示
+[root@centos8 ~]#tree -d /etc |less
+/etc
+├── alternatives
+├── audit
+│ ├── plugins.d
+│ └── rules.d
+├── authselect
+│ └── custom
+├── auto.master.d
+├── bash_completion.d
+├── binfmt.d
+├── chkconfig.d
+├── cifs-utils
+├── cron.d
+├── cron.daily
+...省略...
+```
+
+#### **显示文本前面或后面的行内容**
+
+##### head
+
+可以显示文件或标准输入的前面行
+
+格式:
+
+```text
+head [OPTION]... [FILE]...
+```
+
+选项:
+
+```text
+-c # 指定获取前#字节
+-n # 指定获取前#行,#如果为负数,表示从文件头取到倒数第#前
+-# 同上
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#head -n 3 /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+[root@centos8 ~]#head -3 /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+[root@centos8 ~]#echo a我b | head -c4
+a我[root@centos8 ~]#
+[root@centos8 ~]#cat /dev/urandom | tr -dc '[:alnum:]'| head -c10
+G755MlZatW[root@centos8 ~]#cat /dev/urandom | tr -dc '[:alnum:]'| head -c10
+ASsax6DeBz[root@centos8 ~]#cat /dev/urandom | tr -dc '[:alnum:]'| head -c10 | 
+tee pass.txt | passwd --stdin mage
+Changing password for user mage.
+passwd: all authentication tokens updated successfully.
+[root@centos8 ~]#cat pass.txt 
+AGT952Essg[root@centos8 ~]#su - wang
+[wang@centos8 ~]$su - mage
+Password:
+[root@centos8 ~]#cat seq.log
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#head -n 3 seq.log
+1
+2
+3
+[root@centos8 ~]#head -n -3 seq.log
+1
+2
+3
+4
+5
+6
+7
+[root@centos8 ~]#head -n +3 seq.log
+1
+2
+3
+```
+
+##### **tail**
+
+tail 和head 相反，查看文件或标准输入的倒数行
+
+格式:
+
+```text
+tail [OPTION]... [FILE]...
+```
+
+常用选项:
+
+```bash
+-c # 指定获取后#字节
+-n # 指定获取后#行,如果#是负数,表示从第#行开始到文件结束
+-# 同上
+-f 跟踪显示文件fd新追加的内容,常用日志监控，相当于 --follow=descriptor,当文件删除再新
+建同名文件,将无法继续跟踪文件
+-F 跟踪文件名，相当于--follow=name --retry，当文件删除再新建同名文件,将可以继续跟踪文
+件
+tailf 类似 tail -f，当文件不增长时并不访问文件,节约资源,CentOS8已经无此工具
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cat  /data/f1.txt
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#tail -n 3 /data/f1.txt
+8
+9
+10
+[root@centos8 ~]#tail -n +3 /data/f1.txt
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#tail -3 /var/log/messages 
+Dec 20 09:49:01 centos8 dbus-daemon[952]: [system] Successfully activated 
+service 'net.reactivated.Fprint'
+Dec 20 09:49:01 centos8 systemd[1]: Started Fingerprint Authentication Daemon.
+Dec 20 09:49:13 centos8 su[6887]: (to mage) root on pts/0
+[root@centos8 ~]#tail -f /var/log/messages 
+Dec 20 08:36:40 centos8 systemd[1321]: Startup finished in 52ms.
+Dec 20 08:36:40 centos8 systemd[1]: Started User Manager for UID 0.
+Dec 20 08:47:01 centos8 systemd[1]: Starting dnf makecache...
+Dec 20 08:47:02 centos8 dnf[1465]: AppStream                   
+ 213 kB/s | 4.3 kB   00:00
+Dec 20 08:47:02 centos8 dnf[1465]: BaseOS                    
+ 163 kB/s | 3.9 kB   00:00
+Dec 20 08:47:04 centos8 dnf[1465]: EPEL                     
+ 2.6 kB/s | 5.3 kB   00:02
+Dec 20 08:47:09 centos8 dnf[1465]: EPEL                     
+ 884 kB/s | 4.3 MB   00:05
+Dec 20 08:47:12 centos8 dnf[1465]: extras                    
+ 727 B/s | 1.5 kB   00:02
+Dec 20 08:47:12 centos8 dnf[1465]: Metadata cache created.
+Dec 20 08:47:12 centos8 systemd[1]: Started dnf makecache.
+#只查看最新发生的日志
+[root@centos8 ~]#tail -fn0 /var/log/messages
+[root@centos8 ~]#tail -0f /var/log/messages
+#取IP行
+[root@192 ~]# ifconfig | head -2 | tail -1
+        inet 192.168.48.128  netmask 255.255.255.0  broadcast 192.168.48.255
+```
+
+##### head和tail总结
+
+![image-20250701191750455](images/image-20250701191750455.png)
+
+范例: 显示第6行
+
+```bash
+[root@centos8 ~]#seq 20| head -n 6|tail -n1
+6
+[root@centos8 ~]#seq 20| tail -n +6 |head -n1
+6
+```
+
+#### 按列抽取文本cut
+
+cut 命令可以提取文本文件或STDIN数据的指定列
+
+格式
+
+```text
+cut [OPTION]... [FILE]...
+```
+
+常用选项
+
+```bash
+-d DELIMITER: 指明分隔符，默认tab
+-f FILEDS:
+   #: 第#个字段,例如:3
+   #,#[,#]: 离散的多个字段，例如:1,3,6
+   #-#: 连续的多个字段, 例如:1-6
+   混合使用: 1-3,7
+-c 按字符切割
+--output-delimiter=STRING指定输出分隔符
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cut -d : -f 1,3-4,7 /etc/passwd 
+[root@centos8 ~]#ifconfig |head -n2 |tail -n1|cut -d" " -f10
+10.0.0.8
+[root@centos8 ~]#ifconfig |head -n2 |tail -n1|tr -s " " |cut -d " " -f3
+10.0.0.8
+[root@centos8 ~]#df | tr -s ' '|cut -d' ' -f5 |tr -dc "[0-9\n]"
+0
+0
+1
+0
+5
+1
+15
+1
+[root@centos8 ~]#df | tr -s ' ' % |cut -d% -f5 |tr -d '[:alpha:]'
+0
+0
+1
+0
+5
+1
+15
+1
+[root@centos8 ~]#df | cut -c44-46 |tr -d '[:alpha:]'
+ 0
+ 0
+ 1
+ 0
+ 5
+ 1
+15
+ 1
+[root@centos8 ~]#cut -d: -f1,3,7 --output-delimiter="---" /etc/passwd
+root---0---/bin/bash
+bin---1---/sbin/nologin
+daemon---2---/sbin/nologin
+cat /etc/passwd | cut -d: -f7
+cut -c2-5 /usr/share/dict/words
+[root@centos8 ~]#echo {1..10}| cut -d ' ' -f1-10 --output-delimiter="+" |bc
+55
+```
+
+范例: 取分区利用率
+
+```bash
+#取分区利用率
+[root@centos8 ~]#df|tr -s ' ' |cut -d' ' -f 5 |tr -d %
+[root@centos8 ~]#df|tr -s ' ' '%'|cut -d% -f 5
+Use
+0
+0
+2
+0
+3
+1
+15
+0
+100
+[root@centos8 ~]#df |cut -c 44-46|tail -n +2
+ 0
+ 0
+ 3
+ 0
+ 3
+ 1
+ 13
+ 0
+ 
+[root@centos8 ~]#df | tail -n +2|tr -s ' ' % |cut -d% -f5
+0
+0
+1
+0
+3
+1
+19
+0
+100
+[root@centos8 ~]#df | tail -n +2|tr -s ' ' |cut -d' ' -f5 |tr -d %
+0
+0
+1
+0
+3
+1
+19
+0
+100
+```
+
+#### 合并多个文件paste
+
+格式
+
+```text
+paste 合并多个文件同行号的列到一行
+```
+
+常用选项:
+
+```bash
+-d #分隔符: 指定分隔符，默认用TAB
+-s #所有行合成一行显示
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cat alpha.log
+a
+b
+c
+d
+e
+f
+g
+h
+[root@centos8 ~]#cat seq.log
+1
+2
+3
+4
+5
+[root@centos8 ~]#cat alpha.log seq.log 
+a
+b
+c
+d
+e
+f
+g
+h
+1
+2
+3
+4
+5
+[root@centos8 ~]#paste alpha.log seq.log
+a 1
+b 2
+c 3
+d 4
+e 5
+f 
+g 
+h
+[root@centos8 ~]#paste -d":" alpha.log seq.log 
+a:1
+b:2
+c:3
+d:4
+e:5
+f:
+g:
+h:
+[root@centos8 ~]#paste -s seq.log
+1 2 3 4 5
+[root@centos8 ~]#paste -s alpha.log 
+a b c d e f g h
+[root@centos8 ~]#paste -s alpha.log seq.log
+a b c d e f g h
+1 2 3 4 5
+[root@centos8 ~]#cat title.txt 
+ceo
+coo
+cto
+[root@centos8 ~]#cat emp.txt 
+mage
+zhang
+wang
+xu
+[root@centos8 ~]#paste title.txt emp.txt
+ceo mage
+coo zhang
+cto wang
+ xu
+[root@centos8 ~]#paste -s title.txt emp.txt
+ceo coo cto
+mage zhang wang xu
+[root@centos8 ~]#paste -s -d: f1.log f2.log
+1:2:3:4:5:6:7:8:9:10
+a:b:c:d:e:f:g:h:i:j
+[root@centos8 ~]#seq 10 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 |paste -s -d+|bc
+55
+```
+
+范例: 批量修改密码
+
+```bash
+[root@centos8 ~]#cat user.txt 
+wang
+mage
+[root@centos8 ~]#cat pass.txt
+123456
+magedu
+[root@centos8 ~]#paste -d: user.txt pass.txt
+wang:123456
+mage:magedu
+[root@centos8 ~]#paste -d: user.txt pass.txt|chpasswd
+```
+
+### **分析文本的工具**
+
+文本数据统计: wc
+
+整理文本: sort
+
+比较文件: diff和patch
+
+#### **收集文本统计数据** **wc**
+
+wc 命令可用于统计文件的行总数、单词总数、字节总数和字符总数
+
+可以对文件或STDIN中的数据统计
+
+常用选项
+
+```text
+-l 只计数行数
+-w 只计数单词总数
+-c 只计数字节总数
+-m 只计数字符总数
+-L 显示文件中最长行的长度
+```
+
+范例:
+
+```bash
+wc story.txt 
+39   237  1901 story.txt
+行数  单词数  字节数
+[root@centos8 ~]#ll title.txt
+-rw-r--r-- 1 root root 30 Dec 20 11:05 title.txt
+[root@centos8 ~]#ll title1.txt
+-rw-r--r-- 1 root root 28 Dec 20 11:06 title1.txt
+[root@centos8 ~]#cat title.txt 
+ceo mage
+coo zhang
+cto 老王
+[root@centos8 ~]#cat title1.txt 
+ceo mage
+coo zhang
+cto wang
+[root@centos8 ~]#wc title.txt
+3 6 30 title.txt
+[root@centos8 ~]#wc title1.txt
+3 6 28 title1.txt
+[root@centos8 ~]#wc -l title.txt
+3 title.txt
+[root@centos8 ~]#cat title.txt | wc -l
+3
+[root@centos8 ~]#df | tail -n $(echo `df | wc -l`-1|bc) 
+devtmpfs     910220    0  910220  0% /dev
+tmpfs       924728    0  924728  0% /dev/shm
+tmpfs       924728  9224  915504  1% /run
+tmpfs       924728    0  924728  0% /sys/fs/cgroup
+/dev/sda2   104806400 4836160 99970240  5% /
+/dev/sda3    52403200 398580 52004620  1% /data
+/dev/sda1     999320 131764  798744 15% /boot
+tmpfs       184944    4  184940  1% /run/user/0
+```
+
+范例: 单词文件
+
+```bash
+[root@centos8 ~]#yum -y install words
+[root@centos8 ~]#wc -l /usr/share/dict/linux.words
+479829 /usr/share/dict/linux.words
+```
+
+#### **文本排序** **sort**
+
+把整理过的文本显示在STDOUT，不改变原始文件
+
+格式:
+
+```text
+sort [options] file(s)
+```
+
+常用选项
+
+```text
+-r 执行反方向（由上至下）整理
+-R 随机排序
+-n 执行按数字大小整理
+-h 人类可读排序,如: 2K 1G 
+-f 选项忽略（fold）字符串中的字符大小写
+-u 选项（独特，unique），合并重复项，即去重
+-t c 选项使用c做为字段界定符
+-k # 选项按照使用c字符分隔的 # 列来整理能够使用多次
+```
+
+范例
+
+```bash
+[root@centos8 data]#cut -d: -f1,3 /etc/passwd|sort -t: -k2 -nr |head -n3
+nobody:65534
+xiaoming:1002
+mage:1001
+#统计日志访问量
+[root@centos8 data]#cut -d" " -f1 /var/log/nginx/access_log |sort -u|wc -l
+201
+```
+
+范例: 统计分区利用率
+
+```bash
+[root@centos8 ~]#df
+Filesystem   1K-blocks  Used Available Use% Mounted on
+devtmpfs     391676    0  391676  0% /dev
+tmpfs       408092    0  408092  0% /dev/shm
+tmpfs       408092  5816  402276  2% /run
+tmpfs       408092    0  408092  0% /sys/fs/cgroup
+/dev/sda2   104806400 2259416 102546984  3% /
+/dev/sda3    52403200 398608 52004592  1% /data
+/dev/sda1     999320 130848  799660 15% /boot
+tmpfs       81616    0   81616  0% /run/user/0
+/dev/sr0     7377866 7377866     0 100% /misc/cd
+#查看分区利用率最高值
+[root@centos8 ~]#df| tr -s ' ' '%'|cut -d% -f5|sort -nr|head -1
+100
+[root@centos8 ~]#df | tr -s " " %|cut -d% -f5|tr -d '[:alpha:]' | sort 
+0
+0
+0
+1
+1
+1
+15
+5
+[root@centos8 ~]#df | tr -s " " %|cut -d% -f5|tr -d '[:alpha:]' | sort -n
+0
+0
+0
+1
+1
+1
+5
+15
+[root@centos8 ~]#df | tr -s " " %|cut -d% -f5|tr -d '[:alpha:]' | sort -n |tail 
+-n1
+15
+[root@centos8 ~]#df | tr -s " " %|cut -d% -f5|tr -d '[:alpha:]' | sort -nr
+15
+5
+1
+1
+1
+0
+0
+0
+[root@centos8 ~]#df | tr -s " " %|cut -d% -f5|tr -d '[:alpha:]' | sort -nr|head 
+-n1
+15
+```
+
+面试题: 有两个文件，a.txt与b.txt ，合并两个文件，并输出时确保每个数字也唯一
+
+```bash
+#a.txt中的每一个数字在本文件唯一
+tee a.txt > /dev/null << "EOF"
+200
+100
+34556
+3
+7
+4
+23
+3321
+EOF
+#b.txt中的每一个数字在本文件唯一
+tee b.txt > /dev/null << "EOF"
+123
+43
+100
+200
+345563
+1
+2
+3
+4
+3321
+EOF
+#就是将两个文件合并后重复的行去除，不保留
+100
+345563
+123
+43
+3321
+...
+```
+
+```text
+cat a.txt b.txt | sort -nru
+```
+
+#### **去重** uniq
+
+uniq命令从输入中删除前后相接的重复的行
+
+格式:
+
+```text
+uniq [OPTION]... [FILE]...
+```
+
+常见选项:
+
+```text
+-c: 显示每行重复出现的次数
+-d: 仅显示重复过的行
+-u: 仅显示不曾重复的行
+```
+
+uniq常和sort 命令一起配合使用:
+
+范例:
+
+```bash
+tee userlist.txt > /dev/null << "EOF"
+alice
+bob
+charlie
+alice
+dave
+bob
+alice
+charlie
+eve
+dave
+EOF
+sort userlist.txt | uniq -c
+```
+
+计数
+
+```text
+#a.txt中的每一个数字在本文件唯一
+tee a.txt > /dev/null << "EOF"
+200
+100
+34556
+3
+7
+4
+23
+3321
+EOF
+#b.txt中的每一个数字在本文件唯一
+tee b.txt > /dev/null << "EOF"
+123
+43
+100
+200
+345563
+1
+2
+3
+4
+3321
+EOF
+cat a.txt b.txt | sort | uniq -c
+```
+
+```text
+[root@192 ~]# cat a.txt b.txt | sort | uniq -c
+      1 1
+      2 100
+      1 123
+      1 2
+      2 200
+      1 23
+      2 3
+      2 3321
+      1 34556
+      1 345563
+      2 4
+      1 43
+      1 7
+```
+
+范例: 统计日志访问量最多的请求
+
+```bash
+[root@centos8 data]#cut -d" " -f1 access_log |sort |uniq -c|sort -nr |head -3
+  4870 172.20.116.228
+  3429 172.20.116.208
+  2834 172.20.0.222
+```
+
+范例: 并发连接最多的远程主机IP
+
+```bash
+[root@centos8 ~]#ss -nt|tail -n+2 |tr -s ' ' : |cut -d: -f6|sort|uniq -c|sort -
+nr |head -n2
+   7 10.0.0.1
+   2 10.0.0.7
+```
+
+范例: 取两个文件的相同和不同的行
+
+```bash
+[root@centos8 data]#cat test1.txt
+a
+b
+1
+c
+[root@centos8 data]#cat test2.txt
+b
+e
+f
+c
+1
+2
+#取文件的共同行
+[root@centos8 data]#cat test1.txt test2.txt | sort |uniq -d
+1
+b
+c
+#取文件的不同行
+[root@centos8 data]#cat test1.txt test2.txt | sort |uniq -u
+2
+a
+e
+f
+```
+
+#### **比较文件**
+
+##### **diff**
+
+diff 命令比较两个文件之间的区别
+
+```bash
+-u 选项来输出“统一的（unified）"diff格式文件，最适用于补丁文件
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cat f1.txt 
+mage
+zhang
+wang
+xu
+[root@centos8 ~]#cat f2.txt 
+magedu
+zhang sir
+wang
+xu
+shi
+[root@centos8 ~]#diff f1.txt f2.txt 
+1,2c1,2
+< mage
+< zhang
+---
+> magedu
+> zhang sir
+4a5
+> shi
+[root@centos8 ~]#diff -u f1.txt f2.txt 
+--- f1.txt 2019-12-13 21:31:30.892775671 +0800
++++ f2.txt 2019-12-13 22:00:14.373677728 +0800
+@@ -1,4 +1,5 @@
+-mage
+-zhang
++magedu
++zhang sir
+ wang
+ xu
++shi
+[root@centos8 ~]#diff -u f1.txt f2.txt > f.patch
+[root@centos8 ~]#rm -f f2.txt 
+[root@centos8 ~]#patch -b f1.txt f.patch 
+patching file f1.txt
+[root@centos8 ~]#cat f1.txt
+magedu
+zhang sir
+wang
+xu
+shi
+[root@centos8 ~]#cat f1.txt.orig 
+mage
+zhang
+wang
+xu
+```
+
+##### **patch**
+
+patch 复制在其它文件中进行的改变（要谨慎使用）
+
+```bash
+-b 选项来自动备份改变了的文件
+```
+
+范例:
+
+```bash
+diff -u foo.conf foo2.conf > foo.patch 
+patch -b foo.conf foo.patch
+```
+
+##### **vimdif**
+
+相当于 vim -d
+
+```bash
+[root@centos8 ~]#cat f1.txt
+mage
+zhangsir
+wang
+lilaoshi
+zhao
+[root@centos8 ~]#cat f2.txt
+mage
+zhang
+wang
+li
+zhao
+[root@centos8 ~]#which vimdiff
+/usr/bin/vimdiff
+[root@centos8 ~]#ll /usr/bin/vimdiff 
+lrwxrwxrwx. 1 root root 3 Nov 12 2019 /usr/bin/vimdiff -> vim
+[root@centos8 ~]#vimdiff f1.txt f2.txt
+```
+
+#### **cmp**
+
+范例: 查看二进制文件的不同
+
+```bash
+[root@centos8 data]#ll /usr/bin/dir /usr/bin/ls 
+-rwxr-xr-x. 1 root root 166448 May 12 2019 /usr/bin/dir
+-rwxr-xr-x. 1 root root 166448 May 12 2019 /usr/bin/ls
+[root@centos8 data]#ll /usr/bin/dir /usr/bin/ls -i
+201839444 -rwxr-xr-x. 1 root root 166448 May 12 2019 /usr/bin/dir
+201839465 -rwxr-xr-x. 1 root root 166448 May 12 2019 /usr/bin/ls
+[root@centos8 data]#diff /usr/bin/dir /usr/bin/ls
+Binary files /usr/bin/dir and /usr/bin/ls differ
+[root@centos8 ~]#cmp /bin/dir /bin/ls
+/bin/dir /bin/ls differ: byte 737, line 2
+#跳过前735个字节,观察后面30个字节
+[root@centos8 ~]#hexdump -s 735 -Cn 30 /bin/ls
+000002df 00 05 6d da 3f 1b 77 91 91 63 a7 de 55 63 a2 b9 |..m.?.w..c..Uc..|
+000002ef d9 d2 45 55 4c 00 00 00 00 03 00 00 00 7d    |..EUL........}|
+000002fd
+[root@centos8 ~]#hexdump -s 735 -Cn 30 /bin/dir
+000002df 00 f1 21 4e f2 19 7e ef 38 0d 9b 3e d7 54 08 39 |..!N..~.8..>.T.9|
+000002ef e4 74 4d 69 25 00 00 00 00 03 00 00 00 7d    |.tMi%........}|
+000002fd
+```
+
+**练习**
+
+1、找出ifconfig “网卡名" 命令结果中本机的IPv4地址
+
+```bash
+[root@192 ~]# ifconfig ens160 | head -n 2|tail -n 1 |tr -s ' ' %| cut -d% -f3
+192.168.48.128
+```
+
+2、查出分区空间使用率的最大百分比值
+
+```bash
+[root@192 ~]# df | tr -s ' ' % | cut -d % -f 5| tail -n +2 | sort -nr |head -n 1
+100
+```
+
+3、查出用户UID最大值的用户名、UID及shell类型
+
+```bash
+[root@192 ~]# cut -d : -f 1,3,7 /etc/passwd | sort -t: -k2,2nr | head -n 1
+nobody:65534:/sbin/nologin
+```
+
+4、查出/tmp的权限，以数字方式显示
+
+```bash
+stat -c "%a" /tmp
+```
+
+5、统计当前连接本机的每个远程主机IP的连接数，并按从大到小排序
+
+```bash
+[root@192 ~]# netstat -nt | tail -n +3 | tr -s ' ' % |cut -d% -f 5 | cut -d: -f1 |sort |uniq -c|sort -nr
+      2 192.168.48.1
+      1 3.232.172.64
+```
+
+### 字符转换与删除工具 tr
+
+字符转换与删除工具 tr
+
+`tr`（translate）命令用于从标准输入中**替换、压缩或删除字符**，并将结果输出到标准输出。
+
+#### 基本语法：
+
+```bash
+tr [OPTION]... SET1 [SET2]
+```
+
+| 选项 | 含义 |
+| --- | --- |
+| `-d` | 删除指定字符 |
+| `-s` | 压缩连续重复的字符 |
+| `-c` | 取字符集的补集（反向匹配） |
+| `-dc` | 组合选项：删除不在指定字符集中的字符（只保留指定字符） |
+
+```bash
+# 删除所有非数字字符
+echo "abc123def456" | tr -dc '0-9'
+# 输出：123456
+
+# 将空格压缩为一个
+echo "hello    world" | tr -s ' '
+# 输出：hello world
+
+# 将所有小写字母转为大写
+echo "hello world" | tr 'a-z' 'A-Z'
+# 输出：HELLO WORLD
+```
+
+## **正则表达式**
+
+REGEXP:  Regular Expressions，由一类特殊字符及文本字符所编写的模式，其中有些字符（元字符）
+
+不表示字符字面意义，而表示控制或通配的功能，类似于增强版的通配符功能，但与通配符不同，通配
+
+符功能是用来处理文件名，而正则表达式是处理文本内容中字符
+
+正则表达式被很多程序和开发语言所广泛支持: vim, less,grep,sed,awk, nginx,mysql 等
+
+正则表达式分两类:
+
+基本正则表达式: BRE Basic Regular Expressions
+
+扩展正则表达式: ERE Extended Regular Expressions
+
+正则表达式引擎:
+
+采用不同算法，检查处理正则表达式的软件模块，如: PCRE（Perl Compatible Regular
+
+Expressions）
+
+正则表达式的元字符分类: 字符匹配、匹配次数、位置锚定、分组
+
+帮助: man 7 regex
+
+### **基本正则表达式元字符**
+
+#### **字符匹配**
+
+| 元字符 | 作	用 |
+| --- | :-- |
+| \* | 前一个字符匹配 0 次或任意多次。 |
+| . | 匹配除了换行符外任意一个字符。 |
+| ^ | 匹配行首。例如: ^hello 会匹配以 hello 开头的行。 |
+| \$ | 匹配行尾。例如: hello&会匹配以 hello 结尾的行。 |
+| \[\] | 匹配中括号中指定的任意一个字符，只匹配一个字符。例如: \[aoeiu\] 匹配任意一个元音字母，\[0-9\] 匹配任意一位数字，\[a-z\]\[0-9\]匹配小写字和一位数字构成的两位字符。 |
+| \[^\] | 匹配除中括号的字符以外的任意一个字符。例如: \[^0-9\] 匹配任意一位非数字字符，\[^a-z\] 表示任意一位非小写字母。 |
+| \\ | 转义符。用于取消讲特殊符号的含义取消。 |
+| \{n\} | 表示其前面的字符恰好出现 n 次。例如: \[0-9\]\{4\} 匹配 4 位数字，\[1\]\[3-8\]\[0-9\]\{9\} 匹配手机号码。 |
+| \{n,\} | 表示其前面的字符出现不小于 n 次。例如:  \[0-9\]\{2,\} 表示两位及以上的数字。 |
+| \{n,m\} | 表示其前面的字符至少出现n 次，最多出现m 次。例如: \[a-z\]\{6,8\}匹配 6 到 8 位的小写字母。 |
+
+```bash
+.  匹配任意单个字符(除了\n)，可以是一个汉字或其它国家的文字
+[]  匹配指定范围内的任意单个字符，示例: [wang]  [0-9]  [a-z]  [a-zA-Z]
+[^] 匹配指定范围外的任意单个字符,示例: [^wang] 
+[:alnum:] 字母和数字
+[:alpha:] 代表任何英文大小写字符，亦即 A-Z, a-z
+[:lower:] 小写字母,示例:[[:lower:]],相当于[a-z]
+[:upper:] 大写字母
+[:blank:] 空白字符（空格和制表符）
+[:space:] 包括空格、制表符(水平和垂直)、换行符、回车符等各种类型的空白,比[:blank:]包含的范围
+广
+[:cntrl:] 不可打印的控制字符（退格、删除、警铃...）
+[:digit:] 十进制数字
+[:xdigit:]十六进制数字
+[:graph:] 可打印的非空白字符
+[:print:] 可打印字符
+[:punct:] 标点符号
+-----------------
+\s   #匹配任何空白字符，包括空格、制表符、换页符等等。等价于 [\f\r\t\v]。注意 Unicode 
+正则表达式会匹配全角空格符
+\S   #匹配任何非空白字符。等价于 [^\f\r\t\v]
+\w #匹配一个字母,数字,下划线,汉字,其它国家文字的字符，等价于[_[:alnum:]字]
+\W #匹配一个非字母,数字,下划线,汉字,其它国家文字的字符，等价于[^_[:alnum:]字]
+```
+
+范例:
+
+```bash
+[root@centos8 ~]# ls /etc/ | grep 'rc[.0-6].'
+rc0.d
+rc1.d
+rc2.d
+rc3.d
+rc4.d
+rc5.d
+rc6.d
+rc.d
+rc.local
+[root@centos8 ~]#ls /etc/ | grep 'rc[.0-6].'
+rc0.d
+rc1.d
+rc2.d
+rc3.d
+rc4.d
+rc5.d
+rc6.d
+rc.d
+rc.local
+[root@centos8 ~]#ls /etc/ | grep 'rc[.0-6]\.'
+rc0.d
+rc1.d
+rc2.d
+rc3.d
+rc4.d
+rc5.d
+rc6.d
+```
+
+#### **匹配次数**
+
+用在要指定次数的字符后面，用于指定前面的字符要出现的次数
+
+```bash
+* #匹配前面的字符任意次，包括0次，贪婪模式: 尽可能长的匹配
+.* #任意长度的任意字符
+\? #匹配其前面的字符出现0次或1次,即:可有可无
+\+ #匹配其前面的字符出现最少1次,即:肯定有且 >=1 次
+\{n\} #匹配前面的字符n次
+\{m,n\} #匹配前面的字符至少m次，至多n次
+\{,n\} #匹配前面的字符至多n次,<=n
+\{n,\} #匹配前面的字符至少n次
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#echo /etc/ |grep "/etc/\?"
+/etc/
+[root@centos8 ~]#echo /etc |grep "/etc/\?"
+/etc
+```
+
+范例:
+
+```bash
+tee test.txt >/dev/null <<"EOF"
+google
+goooooooooooooooooogle
+ggle
+gogle
+gooooOOOOO00000gle
+gooogle
+EOF
+#匹配出现两次o以上
+[root@centos8 ~]#grep 'go\{2,\}gle' test.txt
+google
+goooooooooooooooooogle
+gooogle
+#匹配O出现最少1次
+[root@centos8 ~]#grep 'goo\+gle' test.txt
+google
+goooooooooooooooooogle
+gooogle
+#匹配任意次的o包括0次
+[root@centos8 ~]#grep 'goo*gle' test.txt
+google
+goooooooooooooooooogle
+gogle
+gooogle
+#匹配任意次的o包括0次且前面必须是goo后面是gle
+[root@centos8 ~]#grep 'gooo*gle' test.txt
+google
+goooooooooooooooooogle
+gooogle
+```
+
+范例: 匹配正负数
+
+```bash
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep '-\?[0-9]\+'
+grep: invalid option -- '\'
+Usage: grep [OPTION]... PATTERN [FILE]...
+Try 'grep --help' for more information.
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep '\-\?[0-9]\+'
+-1 -2 123 -123 234
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep -E '-?[0-9]+'
+grep: invalid option -- '?'
+Usage: grep [OPTION]... PATTERN [FILE]...
+Try 'grep --help' for more information.
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep -E '\-?[0-9]+'
+-1 -2 123 -123 234
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep -E -- '-?[0-9]+'
+-1 -2 123 -123 234
+[root@centos8 ~]#echo -1 -2 123 -123 234 |grep -E '(-)?[0-9]+'
+-1 -2 123 -123 234
+```
+
+范例: ip地址
+
+```bash
+[root@centos8 ~]#ifconfig eth0
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST> mtu 1500
+    inet 10.0.0.8 netmask 255.255.255.0 broadcast 10.0.0.255
+    inet6 fe80::20c:29ff:fee1:e53 prefixlen 64 scopeid 0x20<link>
+    ether 00:0c:29:e1:0e:53 txqueuelen 1000 (Ethernet)
+    RX packets 45953 bytes 21739254 (20.7 MiB)
+    RX errors 0 dropped 0 overruns 0 frame 0
+    TX packets 35886 bytes 26575579 (25.3 MiB)
+    TX errors 0 dropped 0 overruns 0 carrier 0 collisions 0
+[root@centos8 ~]#ifconfig eth160|grep netmask |grep -o '[0-9]\{1,3\}\.[0-9]\
+{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'|head -n1
+10.0.0.8
+[root@centos8 ~]#ifconfig eth160|grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\
+{1,3\}\.[0-9]\{1,3\}'|head -n1
+10.0.0.8
+```
+
+#### **位置锚定**
+
+位置锚定可以用于定位出现的位置
+
+```bash
+^ #行首锚定, 用于模式的最左侧
+$ #行尾锚定，用于模式的最右侧
+^PATTERN$ #用于模式匹配整行
+^$ #空行
+^[[:space:]]*$ #空白行
+\< 或 \b  #词首锚定，用于单词模式的左侧
+\> 或 \b    #词尾锚定，用于单词模式的右侧
+\<PATTERN\>   #匹配整个单词
+#注意: 单词是由字母,数字,下划线组成
+```
+
+范例
+
+```bash
+[root@centos8 ~]#grep '^[^#]' /etc/fstab
+UUID=acf9bd1f-caae-4e28-87be-e53afec61347 /            xfs   
+defaults    0 0
+UUID=1770b87e-db5a-445e-bff1-1653ac64b3d6 /boot          ext4  
+defaults    1 2
+UUID=ffffd919-d674-44d9-a4e7-402874f0a1f0 /data          xfs   
+defaults    0 0
+UUID=409e36d2-ac5e-423f-ad78-9b12db4576bd swap          swap  
+defaults    0 0
+```
+
+范例: 排除掉空行和#开头的行
+
+```bash
+[root@centos8 ~]#grep -v '^$' /etc/profile|grep -v '^#'
+[root@centos8 ~]#grep '^[^#]' /etc/profile
+[root@centos8 ~]#grep -v '^$\|#' /etc/profile
+```
+
+#### 分组其他
+
+##### 分组
+
+分组: `()` 将多个字符捆绑在一起，当作一个整体处理，如: (root)\+
+
+后向引用: 分组括号中的模式匹配到的内容会被正则表达式引擎记录于内部的变量中，这些变量的命名
+
+方式为: \\1, \\2, \\3, ...
+
+\\1 表示从左侧起第一个左括号以及与之匹配右括号之间的模式所匹配到的字符
+
+注意: \\0 表示正则表达式匹配的所有字符
+
+示例:
+
+```bash
+\(string1\(string2\)\)
+\1 : string1\(string2\)
+\2 : string2
+```
+
+注意:  后向引用 引用前面的分组括号中的模式所匹配字符，而非模式本身
+
+##### **或者**
+
+或者: `\|`
+
+示例:
+
+```bash
+a\|b #a或b 
+C\|cat #C或cat  
+\(C\|c\)at #Cat或cat
+```
+
+范例: 排除空行和#开头的行
+
+```bash
+[root@centos6 ~]#grep -v '^#' /etc/httpd/conf/httpd.conf |grep -v ^$
+[root@centos6 ~]#grep -v '^#\|^$' /etc/httpd/conf/httpd.conf
+[root@centos6 ~]#grep -v '^\(#\|$\)' /etc/httpd/conf/httpd.conf 
+#筛选出以非 # 字符开头的行
+[root@centos6 ~]#grep "^[^#]" /etc/httpd/conf/httpd.conf
+```
+
+#### **正则表达式练习**
+
+1、显示/proc/meminfo文件中以大小s开头的行(要求: 使用两种方法)
+
+```bash
+[root@192 ~]# grep -Ei "^s" /proc/meminfo
+SwapCached:            0 kB
+SwapTotal:       4415484 kB
+SwapFree:        4415484 kB
+Shmem:              9212 kB
+Slab:             114416 kB
+SReclaimable:      40244 kB
+SUnreclaim:        74172 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+
+[root@192 ~]# grep -E '^S' /proc/meminfo
+SwapCached:            0 kB
+SwapTotal:       4415484 kB
+SwapFree:        4415484 kB
+Shmem:              9212 kB
+Slab:             114412 kB
+SReclaimable:      40244 kB
+SUnreclaim:        74168 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+由于没有小写s开头的行，所以不输出
+[root@192 ~]# grep -E '^S\|^s' /proc/meminfo
+```
+
+2、显示/etc/passwd文件中不以/bin/bash结尾的行
+
+```bash
+grep -Ev '\/bin\/bash$' /etc/passwd
+```
+
+3、显示用户rpc默认的shell程序
+
+```bash
+grep -E 'rpc' /etc/passwd | cut -d : -f 
+```
+
+4、找出/etc/passwd中的两位或三位数
+
+```bash
+[root@192 ~]# cut -d: -f3,4 /etc/passwd | grep -E '^([0-9]{2,3}):([0-9]{2,3})$'
+12:100
+14:50
+81:81
+999:997
+193:193
+59:59
+998:996
+997:993
+996:992
+995:991
+994:990
+993:989
+992:988
+991:987
+990:986
+74:74
+72:72
+```
+
+5、显示CentOS7的/etc/grub2.cfg文件中，至少以一个空白字符开头的且后面有非空白字符的行
+
+```bash
+grep '^[[:space:]]\+[[:graph:]]'
+```
+
+6、找出“netstat -tan"命令结果中以LISTEN后跟任意多个空白字符结尾的行
+
+```bash
+[root@192 ~]# netstat -tan | grep -E 'LISTEN[[:space:]]+$'
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+```
+
+7、显示CentOS7上所有UID小于1000以内的用户名和UID
+
+```bash
+[root@192 ~]# cut -d: -f1,3 /etc/passwd | grep -E ':([0-9]{1,3})$' | sort -t: -k2 -n
+root:0
+bin:1
+daemon:2
+adm:3
+lp:4
+sync:5
+shutdown:6
+halt:7
+mail:8
+operator:11
+games:12
+ftp:14
+tss:59
+tcpdump:72
+sshd:74
+dbus:81
+systemd-resolve:193
+chrony:990
+clevis:991
+setroubleshoot:992
+sssd:993
+cockpit-wsinstance:994
+cockpit-ws:995
+libstoragemgmt:996
+unbound:997
+polkitd:998
+systemd-coredump:999
+```
+
+8、添加用户、bash、basher、sh、nologin(其shell为/sbin/nologin),找出/etc/passwd用户名和shell同名的行
+
+```bash
+useradd bash -s /sbin/nologin
+useradd basher -s /sbin/nologin
+useradd sh -s /sbin/nologin
+useradd nologin -s /sbin/nologin
+[root@192 ~]# grep -E '^([^:]+):.*\/\1$' /etc/passwd | cut -d: -f1,7
+sync:/bin/sync
+shutdown:/sbin/shutdown
+halt:/sbin/halt
+nologin:/sbin/nologin
+```
+
+9、利用df和grep，取出磁盘各分区利用率，并从大到小排序
+
+`数值排序的话一定要加sort -n`
+
+```bash
+[root@192 ~]# df -h | grep -Eo '([0-9]{1,3}%)' | cut -d% -f 1 | sort -nr
+22
+5
+1
+1
+0
+0
+0
+0
+```
+
+### **扩展正则表达式元字符**
+
+| 扩展元字符 | 作	用 |
+| --- | --- |
+| \+ | 前一个字符匹配 1 次或任意多次。如“go\+gle"会匹配“gogle"、“google"或“gooogle"，当然如果“o"有更多个，也能匹配。 |
+| ？ | 前一个字符匹配 0 次或 1 次。如“colou?r"可以匹配“colour"或“color"。 |
+| \| | 匹配两个或多个分支选择。如“was\|his"会匹配既包含“was"的行，也匹配包含“his"的行。 |
+| （） | 匹配其整体为一个字符，即模式单元。可以理解为由多个单个字符组成的大字符。<br />如“(dog)\+"会匹配“dog"、“dogdog"、“dogdogdog"等，因为被（）包含的字符会当成一个整体。但“hello （world\|earth）"会匹配“hello world"及“hello earth"。 |
+
+#### 字符匹配
+
+```bash
+. 任意单个字符
+[wang] 指定范围的字符
+[^wang] 不在指定范围的字符
+[:alnum:] 字母和数字
+[:alpha:] 代表任何英文大小写字符，亦即 A-Z, a-z
+[:lower:] 小写字母,示例:[[:lower:]],相当于[a-z]
+[:upper:] 大写字母
+[:blank:] 空白字符（空格和制表符）
+[:space:] 水平和垂直的空白字符（比[:blank:]包含的范围广）
+[:cntrl:] 不可打印的控制字符（退格、删除、警铃...）
+[:digit:] 十进制数字
+[:xdigit:]十六进制数字
+[:graph:] 可打印的非空白字符
+[:print:] 可打印字符
+[:punct:] 标点符号
+```
+
+#### **次数匹配**
+
+```bash
+*  匹配前面字符任意次
+? 0或1次
++ 1次或多次
+{n} 匹配n次
+{m,n} 至少m，至多n次
+```
+
+#### 分组其他
+
+```bash
+() 分组
+后向引用: \1, \2, ... 注意: \0 表示正则表达式匹配的所有字符
+| 或者
+a|b #a或b
+C|cat #C或cat
+(C|c)at #Cat或cat
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#ifconfig | grep -Ewo "(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"|head -n1
+10.0.0.8
+```
+
+#### **扩展正则表达式练习**
+
+1、显示三个用户root、mage、wang的UID和默认shell
+
+```bash
+useradd mage
+useradd wang
+[root@192 ~]# cut -d: -f1,3,7 /etc/passwd | grep -E '^(root|mage|wang):'
+root:0:/bin/bash
+wang:1000:/bin/bash
+mage:1005:/bin/bash
+```
+
+2、找出/etc/rc.d/init.d/functions文件中行首为某单词(包括下划线)后面跟一个小括号的行
+
+```bash
+[root@192 ~]# grep -E '(^[[:alpha:]]+)_[[:alpha:]]+()' /etc/rc.d/init.d/functions
+systemctl_redirect () {
+echo_success() {
+echo_failure() {
+echo_passed() {
+echo_warning() {
+update_boot_stage() {
+is_ignored_file() {
+is_true() {
+is_false() {
+apply_sysctl() {
+```
+
+3、使用egrep取出/etc/rc.d/init.d/functions中其基名
+
+```bash
+[root@192 ~]# echo "/etc/rc.d/init.d/functions" | egrep -o '[^/]+$'
+functions
+[root@192 ~]# echo "/etc/rc.d/init.d/functions" | sed -nE 's#.*/([^/]+)$#\1#p'
+functions
+```
+
+4、使用egrep取出上面路径的目录名
+
+```bash
+[root@192 ~]# echo "/etc/rc.d/init.d/functions" | egrep -o '([^/]+)\/[^/]+$' | cut -d'/' -f1
+init.d
+echo "/etc/rc.d/init.d/functions" | sed -E 's#.*/([^/]+)/[^/]+$#\1#'
+```
+
+5、统计last命令中以root登录的每个主机IP地址登录次数
+
+```bash
+[root@192 ~]# last | grep 'root.*pts/' | tr -s ' ' % | cut -d % -f 3 | uniq -c
+      5 192.168.48.1
+```
+
+6、利用扩展正则表达式分别表示0-9、10-99、100-199、200-249、250-255
+
+```bash
+[root@192 ~]# echo 2 | grep -E [0-9]
+2
+[root@192 ~]# echo 45 | grep -E [0-9]{2}
+45
+[root@192 ~]# echo 154 | grep -E 1[0-9]{2}
+154
+[root@192 ~]# echo 234 | grep -E 2[0-4][0-9]
+234
+[root@192 ~]# echo 254 | grep -E 2[5-9][0-5]
+254
+```
+
+7、显示ifconfig命令结果中所有IPv4地址
+
+```bash
+[root@192 ~]# ifconfig | grep netmask | sed -E 's#.*inet (([0-9]{1,3}.){3}[0-9]{1,3}).*#\1#'
+192.168.48.11
+127.0.0.1
+```
+
+8、将此字符串: welcome to magedu linux 中的每个字符去重并排序，重复次数多的排到前面
+
+```bash
+[root@192 ~]# echo "welcome to magedu linux" | fold -w1 | grep -Eo [[:alpha:]] | sort | uniq -c | sort -nr
+      3 e
+      2 u
+      2 o
+      2 m
+      2 l
+      1 x
+      1 w
+      1 t
+      1 n
+      1 i
+      1 g
+      1 d
+      1 c
+      1 a
+```
+
+## **文本处理三剑客**
+
+```bash
+grep 命令主要对文本的（正则表达式）行基于模式进行过滤
+sed: stream editor，文本编辑工具
+awk: Linux上的实现gawk，文本报告生成器
+```
+
+### **grep**
+
+grep: Global search REgular expression and Print out the line
+
+作用: 文本搜索工具，根据用户指定的“模式"对目标文本逐行进行匹配检查；打印匹配到的行
+
+模式: 由正则表达式字符及文本字符所编写的过滤条件
+
+格式
+
+```bash
+grep [OPTIONS] PATTERN [FILE...]
+```
+
+常见选项:
+
+```bash
+--color=auto 对匹配到的文本着色显示
+-m # 匹配#次后停止
+-v 显示不被pattern匹配到的行,即取反
+-i 忽略字符大小写
+-n 显示匹配的行号
+-c 统计匹配的行数
+-o 仅显示匹配到的字符串
+-q 静默模式，不输出任何信息
+-A # after, 后#行
+-B # before, 前#行
+-C # context, 前后各#行
+-e 实现多个选项间的逻辑or关系,如: grep -e ‘cat ' -e ‘dog' file
+-w 匹配整个单词
+-E 使用ERE，相当于egrep
+-F 不支持正则表达式，相当于fgrep
+-P 支持Perl格式的正则表达式
+-f file 根据模式文件处理
+-r  递归目录，但不处理软链接
+-R  递归目录，但处理软链接
+-l 只输出文件名
+```
+
+范例:
+
+包含root关键字的行
+
+```bash
+[root@192 ~]# grep root /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+```
+
+显示cpu核心数
+
+```bash
+[root@192 ~]# grep -c processor /proc/cpuinfo
+4
+```
+
+范例: 取两个文件的相同行
+
+```bash
+mkdir /data
+tee /data/f1.txt >/dev/null <<"EOF"
+a
+b
+1
+c
+EOF
+tee /data/f2.txt >/dev/null <<"EOF"
+b
+e
+f
+c
+1
+2
+EOF
+#不严谨
+[root@192 ~]#grep -f /data/f1.txt /data/f2.txt
+b
+c
+1
+[root@192 ~]# cat /data/f1.txt /data/f2.txt| sort | uniq -d
+1
+b
+c
+```
+
+范例: 分区利用率最大的值
+
+```bash
+[root@centos8 ~]#df | grep '^/dev/sd' |tr -s ' ' %|cut -d% -f5|sort -n|tail -1
+[root@centos8 ~]#df |grep '^/dev/sd' |grep -oE '\<[0-9]{,3}%'|tr -d '%'|sort -
+nr|head -n1
+[root@centos8 ~]#df |grep '^/dev/sd' |grep -oE '\<[0-9]{,3}%'|grep -Eo '[0-9]+' |sort -nr|head -n 1
+13
+```
+
+范例: 哪个IP和当前主机连接数最多的前三位
+
+```bash
+[root@centos8 ~]#ss -nt | grep "^ESTAB" |tr -s ' ' : |cut -d: -f6|sort |uniq -c|sort -nr|head -n3
+   3 10.0.0.1
+   1 172.16.4.100
+   1 172.16.31.188
+```
+
+范例: 连接状态的统计
+
+```bash
+[root@wang-liyun-pc ~]# ss -nta | grep -v '^State' |cut -d" " -f1|sort |uniq -c
+   7 ESTAB
+   4 LISTEN
+   7 TIME-WAIT
+[root@wang-liyun-pc ~]# ss -nta | tail -n +2 |cut -d" " -f1|sort |uniq -c
+   3 ESTAB
+   4 LISTEN
+   12 TIME-WAIT
+```
+
+范例: 去除注释行和空行
+
+```bash
+grep -v "^#" /etc/profile | grep -v '^$'
+grep -v "^#\|^$" /etc/profile
+grep -v "^\(#\|$\)" /etc/profile 
+grep -Ev "^(#|$)" /etc/profile
+egrep -v "^(#|$)" /etc/profile
+egrep -v '^(#|$)' /etc/httpd/conf/httpd.conf | grep -v '#'
+```
+
+范例:中间匹配两个任意字符
+
+```bash
+[root@centos8 ~]#grep -o 'r..t' /etc/passwd
+root
+root
+root
+root
+r/ft
+rypt
+```
+
+范例
+
+```bash
+[root@centos8 ~]#ifconfig | grep -E '[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}'
+    inet 10.0.0.8 netmask 255.255.255.0 broadcast 10.0.0.255
+    inet 172.16.0.123 netmask 255.255.0.0 broadcast 172.16.255.255
+    inet6 fe80::c11e:4792:7e77:12a4 prefixlen 64 scopeid 0x20<link>
+    inet 127.0.0.1 netmask 255.0.0.0
+[root@centos8 ~]#ifconfig | grep -E '([0-9]{1,3}.){3}[0-9]{1,3}'
+    inet 10.0.0.8 netmask 255.255.255.0 broadcast 10.0.0.255
+    inet 172.16.0.123 netmask 255.255.0.0 broadcast 172.16.255.255
+    inet6 fe80::c11e:4792:7e77:12a4 prefixlen 64 scopeid 0x20<link>
+    inet 127.0.0.1 netmask 255.0.0.0
+[root@centos8 ~]#ifconfig ens160 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'|head -1
+10.0.0.8
+[root@centos8 ~]#cat regex.txt 
+([0-9]{1,3}\.){3}[0-9]{1,3}
+[root@centos8 ~]#ifconfig | grep -oEf regex.txt 
+10.0.0.8
+255.255.255.0
+10.0.0.255
+127.0.0.1
+255.0.0.0
+```
+
+范例:
+
+```bash
+[root@192 ~]# grep -E 'root|bash' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+xiaoohu:x:1000:1000:XiaooHu:/home/xiaoohu:/bin/bash
+wang:x:1001:1001::/home/wang:/bin/bash
+abc:x:1002:1003::/home/abc:/bin/bash
+[root@192 ~]# grep -e 'root' -e 'bash' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+xiaoohu:x:1000:1000:XiaooHu:/home/xiaoohu:/bin/bash
+wang:x:1001:1001::/home/wang:/bin/bash
+abc:x:1002:1003::/home/abc:/bin/bash
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#grep -w root /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+[root@centos8 ~]#grep '\<root\>' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+```
+
+范例
+
+```bash
+[root@centos8 ~]#grep "^\(.*\)\>.*\<\1$" /etc/passwd
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+bash:x:1008:1008::/home/bash:/bin/bash
+nologin:x:1011:1011::/home/nologin:/sbin/nologin
+[root@centos8 ~]#grep -E "^(.*)\>.*\<\1$" /etc/passwd
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+bash:x:1008:1008::/home/bash:/bin/bash
+nologin:x:1011:1011::/home/nologin:/sbin/nologin
+[root@centos8 ~]#egrep "^(.*)\>.*\<\1$" /etc/passwd
+sync:x:5:0:sync:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+halt:x:7:0:halt:/sbin:/sbin/halt
+bash:x:1008:1008::/home/bash:/bin/bash
+nologin:x:1011:1011::/home/nologin:/sbin/nologin
+```
+
+范例: 过滤掉文件的注释(包括#号的行)和空行
+
+```bash
+[root@centos8 ~]#grep -Ev '^$|#' /etc/fstab 
+UUID=01f1068e-6937-4fb2-b64b-0d7d6b85ad08 /            xfs   
+defaults    0 0
+UUID=cb21e5ce-edf6-4ed1-8df9-ba98520a68dc /boot          xfs   
+defaults    0 0
+UUID=9ea3524a-7cff-49a0-951e-8429a30bd0a0 /data          xfs   
+defaults    0 0
+UUID=42174d44-41aa-448b-88bc-fd36d6a49e39 swap          swap  
+defaults    0 0
+```
+
+范例: 面试题，算出所有人的年龄总和
+
+```bash
+tee /data/age.txt >/dev/null <<"EOF"
+xiaoming=20
+xiaohong=18
+xiaoqiang=22
+EOF
+[root@192 ~]# cut -d= -f2 /data/age.txt |tr -s '\n' +|  grep -Eo ".*[0-9]"| bc
+60
+[root@centos8 ~]#grep -Eo "[0-9]+" /data/age.txt | tr '\n' + | grep -Eo ".*[0-
+9]"|bc
+60
+[root@centos8 ~]#grep -oE '[0-9]+' /data/age.txt| paste -s -d+|bc
+60
+```
+
+### **sed**
+
+#### sed 工作原理
+
+sed 即 Stream EDitor，和 vi 不同，sed是行编辑器
+
+![image-20250702192154231](images/image-20250702192154231.png)
+
+Sed是从文件或管道中读取一行，处理一行，输出一行；再读取一行，再处理一行，再输出一行，直到最后一行。每当处理一行时，把当前处理的行存储在临时缓冲区中，称为`模式空间（Pattern Space）`，接着用sed命令处理缓冲区中的内容，处理完成后，把缓冲区的内容送往屏幕。接着处理下一行，这样不断重复，直到文件末尾。一次处理一行的设计模式使得sed性能很高，sed在读取大文件时不会出现卡顿的现象。如果使用vi命令打开几十M上百M的文件，明显会出现有卡顿的现象，这是因为vi命令打开文件是一次性将文件加载到内存，然后再打开。Sed就避免了这种情况，一行一行的处理，打开速度非常快，执行速度也很快
+
+#### **sed** **基本用法**
+
+格式
+
+```bash
+sed [option]... 'script;script;...' [inputfile...]
+```
+
+常用选项:
+
+```bash
+-n 不输出模式空间内容到屏幕，即不自动打印
+-e 多点编辑 #类似grep的 -e
+-f FILE 从指定文件中读取编辑脚本
+-r, -E 使用扩展正则表达式
+-i.bak 备份文件并原处编辑
+-s      将多个文件视为独立文件，而不是单个连续的长文件流
+#说明: 
+-ir  不支持
+-i -r 支持
+-ri  支持
+-ni  危险选项,会清空文件
+```
+
+**script** \*\*格式: \*\*
+
+```bash
+'地址命令'
+```
+
+\*\*地址格式: \*\*
+
+```bash
+1. 不给地址: 对全文进行处理
+2. 单地址: 
+  #: 指定的行，$: 最后一行
+  /pattern/: 被此处模式所能够匹配到的每一行
+3. 地址范围: 
+  #,#   #从#行到第#行，3,6 从第3行到第6行
+  #,+#  #从#行到+#行，3,+4 表示从3行到第7行
+  /pat1/,/pat2/
+  #,/pat/
+  /pat/,#
+4. 步进: ~
+   1~2 奇数行
+   2~2 偶数行
+```
+
+\*\*命令: \*\*
+
+```bash
+p 打印当前模式空间内容，追加到默认输出之后
+Ip 忽略大小写输出
+d 删除模式空间匹配的行，并立即启用下一轮循环
+a [\]text 在指定行后面追加文本，支持使用\n实现多行追加
+i [\]text 在行前面插入文本
+c [\]text 替换行为单行或多行文本
+w file 保存模式匹配的行至指定文件
+r file 读取指定文件的文本至模式空间中匹配到的行后
+= 为模式空间中的行打印行号
+! 模式空间中匹配行取反处理
+q 结束或退出sed
+```
+
+**查找替代**
+
+```bash
+s/pattern/string/修饰符 查找替换,支持使用其它分隔符，可以是其它形式: s@@@，s###
+替换修饰符: 
+g 行内全局替换
+p 显示替换成功的行
+w  /PATH/FILE 将替换成功的行保存至文件中
+I,i  忽略大小写
+```
+
+范例
+
+```bash
+#默认sed会将输入信息直接输出
+[root@centos8 ~]#sed '' 
+qianyios  #这是输入的
+qianyios  #这是自动输出
+[root@192 ~]# sed '' /etc/issue
+\S
+Kernel \r on an \m
+#默认输出加p的打印，两次
+[root@192 ~]# sed 'p' /etc/issue
+\S
+\S
+Kernel \r on an \m
+Kernel \r on an \m
+#-n取消自动打印，输出第一行
+[root@192 ~]# sed -n '1p' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+
+#没取消自动打印
+[root@192 ~]# ifconfig ens160 | sed '2p'
+ens160: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.48.11  netmask 255.255.255.0  broadcast 192.168.48.255
+        inet 192.168.48.11  netmask 255.255.255.0  broadcast 192.168.48.255
+        inet6 fe80::20c:29ff:fe1c:9307  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:1c:93:07  txqueuelen 1000  (Ethernet)
+        RX packets 1004  bytes 77518 (75.7 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 1603  bytes 188072 (183.6 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+#取消自动打印
+[root@192 ~]# ifconfig ens160 | sed '2p' -n
+        inet 192.168.48.11  netmask 255.255.255.0  broadcast 192.168.48.255
+[root@192 ~]#
+
+#   #: 指定的行，$: 最后一行
+[root@192 ~]# tail -n 2 /etc/passwd
+sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+tcpdump:x:72:72::/:/sbin/nologin
+[root@192 ~]# sed -n '$p' /etc/passwd
+tcpdump:x:72:72::/:/sbin/nologin
+#倒数第二行
+[root@192 ~]# sed -n "$(echo $[`cat /etc/passwd|wc -l`-1])p" /etc/passwd
+sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+
+[root@192 ~]# ifconfig ens160 |sed -n '/netmask/p'
+        inet 192.168.48.11  netmask 255.255.255.0  broadcast 192.168.48.255
+
+#不包含#号和空行开头的行
+[root@192 data]# sed -n '/^$\|#/!p' /etc/fstab
+/dev/mapper/cs-root     /                       xfs     defaults        0 0
+UUID=2185f3a1-26f6-4156-ac04-310278481726 /boot                   xfs     defaults        0 0
+/dev/mapper/cs-home     /home                   xfs     defaults        0 0
+/dev/mapper/cs-swap     none                    swap    defaults        0 0
+
+[root@192 data]# seq 10 | sed -n '3,6p'
+3
+4
+5
+6
+[root@192 data]# seq 10 | sed -n '3,+4p'
+3
+4
+5
+6
+7
+#末尾行
+[root@192 data]# seq 10 | sed -n '3,$p'
+3
+4
+5
+6
+7
+8
+9
+10
+#输出奇数行
+[root@192 data]# seq 10 | sed -n '1~2p'
+1
+3
+5
+7
+9
+#输出偶数行
+[root@192 data]# seq 10 | sed -n '2~2p'
+2
+4
+6
+8
+10
+#开启自动打印，删除奇数行
+[root@192 data]# seq 10 | sed '1~2d'
+2
+4
+6
+8
+10
+#开启自动打印，删除偶数行
+[root@192 data]# seq 10 | sed '2~2d'
+1
+3
+5
+7
+9
+#开启自动打印，删除2和4
+[root@192 data]# seq 10 | sed -e '2d' -e '4d'
+1
+3
+5
+6
+7
+8
+9
+10
+#开启自动打印，删除2和4
+[root@192 data]# seq 10 | sed -e '2d;4d'
+1
+3
+5
+6
+7
+8
+9
+10
+#不显示注释行和空行
+[root@192 data]# sed '/^#/d;/^$/d' /etc/fstab
+/dev/mapper/cs-root     /                       xfs     defaults        0 0
+UUID=2185f3a1-26f6-4156-ac04-310278481726 /boot                   xfs     defaults        0 0
+/dev/mapper/cs-home     /home                   xfs     defaults        0 0
+/dev/mapper/cs-swap     none                    swap    defaults        0 0
+[root@192 data]# grep -Ev '^#|^$' /etc/fstab
+/dev/mapper/cs-root     /                       xfs     defaults        0 0
+UUID=2185f3a1-26f6-4156-ac04-310278481726 /boot                   xfs     defaults        0 0
+/dev/mapper/cs-home     /home                   xfs     defaults        0 0
+/dev/mapper/cs-swap     none                    swap    defaults        0 0
+[root@192 data]#
+
+#实现-i修改文件和备份
+[root@192 ps]# seq 10 > seq.log
+[root@192 ps]# sed -i.bak '2d;4d' seq.log
+[root@192 ps]# ls
+seq.log  seq.log.bak
+#删除了2和4的新文件
+[root@192 ps]# cat seq.log
+1
+3
+5
+6
+7
+8
+9
+10
+#备份的文件
+[root@192 ps]# cat seq.log.bak
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+#在第5行后添加hello
+[root@192 ps]# seq 10 | sed '5a hello'
+1
+2
+3
+4
+5
+hello
+6
+7
+8
+9
+10
+#把第5行换成hello
+[root@192 ps]# seq 10 | sed '5c hello'
+1
+2
+3
+4
+hello
+6
+7
+8
+9
+10
+#生成测试文件
+[root@192 ps]# tee 1.txt > /dev/null <<"EOF"
+> abc
+> def
+> ghi
+> EOF
+#读取奇数行，在匹配到奇数行后，将1.txt的内容添加到奇数行后
+[root@192 ps]# seq 10 | sed '1~2r 1.txt'
+1
+abc
+def
+ghi
+2
+3
+abc
+def
+ghi
+4
+5
+abc
+def
+ghi
+6
+7
+abc
+def
+ghi
+8
+9
+abc
+def
+ghi
+10
+#读取第二行输出到2.txt
+[root@192 ps]# seq 10 | sed -n '2w 2.txt'
+[root@192 ps]# cat 2.txt
+2
+
+[root@192 ps]# sed = 1.txt
+1
+abc
+2
+def
+3
+ghi
+#sed 来实现为每一行打印行号
+[root@192 ps]# sed = 1.txt | sed 'N;s/\n/ /'
+1 abc
+2 def
+3 ghi
+#  N: 将下一行添加到模式空间中，用换行符分隔。
+#  s/\n/ /: 将换行符替换为空格，将行号和行内容合并到同一行。
+```
+
+```bash
+#替换
+[root@192 ~]# echo abc123xyz | sed 's/abc/6/'
+6123xyz
+#分组，用\1代表abc，\2表示123,替换
+[root@192 ~]# echo abc123xyz | sed -E 's/(abc)(123)/\1666\2yqy/'
+abc666123yqyxyz
+#分组删除中间的元素
+[root@192 ~]# echo abc123xyz | sed -E 's#(abc)(123)(xyz)#\1\3#'
+abcxyz
+[root@192 ~]# echo abc123xyz | sed -E 's#(abc)(123)(xyz)#\1\2#'
+abc123
+[root@192 ~]# echo abc123xyz | sed -E 's#(abc)(123)(xyz)#\2\3#'
+123xyz
+#用&代表前面的元素，&等于搜索的内容
+[root@192 ~]# echo abc123xyz | sed -E 's#.*#&ooo#'
+abc123xyzooo
+[root@192 ~]# echo abc123xyz | sed -E 's#abc.*#&ooo#'
+abc123xyzooo
+
+#关闭selinux
+[root@192 ~]# cat /etc/sysconfig/selinux
+SELINUX=enforcing
+SELINUXTYPE=targeted
+
+[root@192 ~]# sed -E 's#^(SELINUX=).*#\1disabled#' /etc/sysconfig/selinux
+SELINUX=disabled
+SELINUXTYPE=targeted
+
+#取IP地址，匹配第二行。然后进行分组替换
+[root@192 ~]# ifconfig ens160 | sed -En '2s#^.*net ([0-9.]+)  netmask.*#\1#p'
+192.168.48.11
+[root@192 ~]# ifconfig ens160 | sed -En '2s#^.*net ([0-9.]+).*#\1#p'
+192.168.48.11
+
+
+#范例修改网卡名
+[root@192 ~]# cat /etc/default/grub
+......
+GRUB_CMDLINE_LINUX="crashkernel=auto resume=/dev/mapper/cs-swap rd.lvm.lv=cs/root rd.lvm.lv=cs/swap rhgb quiet"
+......
+[root@192 ~]# sed -ri.bak 's#(^GRUB_CMDLINE_LINUX=.*)"$#\1 net.ifname=0"#' /etc/default/grub
+[root@192 ~]# cat /etc/default/grub
+......
+GRUB_CMDLINE_LINUX="crashkernel=auto resume=/dev/mapper/cs-swap rd.lvm.lv=cs/root rd.lvm.lv=cs/swap rhgb quiet net.ifname=0"
+...... 
+
+[root@192 ~]# sed -ri '/^GRUB_CMDLINE_LINUX=/s#"$# net.ifname=0"#' /etc/default/grub
+[root@192 ~]# cat /etc/default/grub
+GRUB_CMDLINE_LINUX="crashkernel=auto resume=/dev/mapper/cs-swap rd.lvm.lv=cs/root rd.lvm.lv=cs/swap rhgb quiet net.ifname=0"
+
+#重启生效
+grub2-mkconfig -o /etc/grub2.cfg;reboot
+
+#全局替换
+[root@192 ~]# useradd wang
+[root@192 ~]# tee test.cong > /dev/null <<"EOF"
+port 6389
+log redis-6389.log
+EOF
+[root@192 ~]# sed "s#6389#8888#g" test.cong > test2.cong
+[root@192 ~]# cat test2.cong
+port 8888
+log redis-8888.log
+[root@192 ~]# sed "s#6389#`id -u wang`#g" test.cong > test3.cong
+[root@192 ~]# cat test3.cong
+port 1000
+log redis-1000.log
+[root@192 ~]#
+[root@192 ~]# sed "s#6389#$UID#g" test.cong > test4.cong
+[root@192 ~]# cat test4.cong
+port 0
+log redis-0.log
+[root@192 ~]#
+#分区利用率
+[root@192 ~]# df -h
+Filesystem           Size  Used Avail Use% Mounted on
+devtmpfs             2.0G     0  2.0G   0% /dev
+tmpfs                2.0G     0  2.0G   0% /dev/shm
+tmpfs                2.0G  9.0M  2.0G   1% /run
+tmpfs                2.0G     0  2.0G   0% /sys/fs/cgroup
+/dev/mapper/cs-root   64G  2.7G   62G   5% /
+/dev/mapper/cs-home   32G  255M   31G   1% /home
+/dev/nvme0n1p1      1014M  216M  799M  22% /boot
+tmpfs                400M     0  400M   0% /run/user/0
+[root@192 ~]# df -h | sed -En "s#\/dev\/.* ([0-9]+)%.*#\1#p"
+5
+1
+22
+```
+
+```bash
+sed '2p' /etc/passwd
+sed -n '2p' /etc/passwd
+sed -n '1,4p' /etc/passwd
+sed -n '/root/p' /etc/passwd
+sed -n '2,/root/p' /etc/passwd 从2行开始
+sed -n '/^$/=' file 显示空行行号
+sed -n -e '/^$/p' -e '/^$/=' file
+Sed'/root/a\superman' /etc/passwd行后
+sed '/root/i\superman' /etc/passwd 行前
+sed '/root/c\superman' /etc/passwd 代替行
+sed '/^$/d' file
+sed '1,10d'  file
+nl  /etc/passwd | sed '2,5d'
+nl  /etc/passwd | sed '2a tea'
+sed 's/test/mytest/g' example
+sed -n 's/root/&superman/p' /etc/passwd 单词后
+sed -n 's/root/superman&/p' /etc/passwd 单词前
+sed -e 's/dog/cat/' -e 's/hi/lo/' pets 
+sed -i.bak 's/dog/cat/g' pets
+```
+
+范例: 取基名和目录名
+
+```bash
+echo "/etc/sysconfig/network-scripts/" |sed -r 's#(^/.*/)([^/]+/?)#\2#' 取基名
+echo "/etc/sysconfig/network-scripts/" |sed -r 's#(^/.*/)([^/]+/?)#\1#' 取目录
+#取目录名
+[root@centos8 ~]#echo /etc/sysconfig/ | sed -rn 's#(.*)/([^/]+)/?#\1#p'
+/etc
+#取基名
+[root@centos8 ~]#echo /etc/sysconfig/ | sed -rn 's#(.*)/([^/]+)/?#\2#p'
+sysconfig
+```
+
+范例: 将非#开头的行加#
+
+```bash
+[root@192 ~]# sed -rn "s/^[^#]/#&/p" /etc/fstab
+#/dev/mapper/cs-root     /                       xfs     defaults        0 0
+#UUID=2185f3a1-26f6-4156-ac04-310278481726 /boot                   xfs     defaults        0 0
+#/dev/mapper/cs-home     /home                   xfs     defaults        0 0
+#/dev/mapper/cs-swap     none                    swap    defaults        0 0
+[root@192 ~]#
+```
+
+范例: 将`#`开头的行删除`#`
+
+```bash
+[root@centos8 ~]#sed -r '/^#/s/^#//' /etc/fstab
+```
+
+范例: 显示前十行
+
+```bash
+[root@centos8 ~]#seq 100 > test.txt
+[root@centos8 ~]#sed 10q test.txt
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+
+#### sed高级用用法
+
+sed 中除了模式空间，还另外还支持保持空间（Hold Space）,利用此空间，可以将模式空间中的数据，临时保存至保持空间，从而后续接着处理，实现更为强大的功能。
+
+常见的高级命令
+
+```bash
+P 打印模式空间开端至\n内容，并追加到默认输出之前
+h 把模式空间中的内容覆盖至保持空间中
+H 把模式空间中的内容追加至保持空间中
+g 从保持空间取出数据覆盖至模式空间
+G 从保持空间取出内容追加至模式空间
+x 把模式空间中的内容与保持空间中的内容进行互换
+n 读取匹配到的行的下一行覆盖至模式空间
+N 读取匹配到的行的下一行追加至模式空间
+d 删除模式空间中的行
+D 如果模式空间包含换行符，则删除直到第一个换行符的模式空间中的文本，并不会读取新的输入行，而使
+用合成的模式空间重新启动循环。如果模式空间不包含换行符，则会像发出d命令那样启动正常的新循环
+```
+
+范例:
+
+```bash
+sed -n 'n;p' FILE
+seq 10 | sed 'N;s/\n//'
+sed '1!G;h;$!d' FILE
+seq 10 | sed -n '/3/{g;1!p;};h' #前一行
+seq 10 | sed -nr '/3/{n;p}'   #后一行
+sed 'N;D'FILE
+seq 10 |sed '3h;9G;9!d'
+sed '$!N;$!D' FILE
+sed '$!d' FILE
+sed 'G' FILE
+sed 'g' FILE
+sed '/^$/d;G' FILE
+sed 'n;d' FILE 
+sed -n '1!G;h;$p' FILE
+```
+
+范例: 打印偶数行
+
+```bash
+[root@centos8 ~]#seq 10 | sed -n 'n;p'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | sed -n '2~2p'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | sed '1~2d'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | sed -n '1~2!p'
+2
+4
+6
+8
+10
+```
+
+练习:
+
+1、删除centos7系统/etc/grub2.cfg文件中所有以空白开头的行行首的空白字符
+
+```bash
+sed '/^[[:blank:]]/d' /etc/grub2.cfg
+```
+
+2、删除/etc/fstab文件中所有以#开头，后面至少跟一个空白字符的行的行首的#和空白字符
+
+```bash
+[root@192 ~]# sed 's/^#[[:blank:]]//g' /etc/fstab
+
+#
+/etc/fstab
+Created by anaconda on Tue Mar 28 07:13:21 2023
+#
+Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+After editing this file, run 'systemctl daemon-reload' to update systemd
+units generated from this file.
+#
+/dev/mapper/cs-root     /                       xfs     defaults        0 0
+UUID=2185f3a1-26f6-4156-ac04-310278481726 /boot                   xfs     defaults        0 0
+/dev/mapper/cs-home     /home                   xfs     defaults        0 0
+/dev/mapper/cs-swap     none                    swap    defaults        0 0
+```
+
+3、在centos6系统/root/install.log每一行行首增加#号
+
+```bash
+cat /root/install.log | sed -E 's/^[^#]/#&/g'
+```
+
+4、在/etc/fstab文件中不以#开头的行的行首增加#号
+
+```bash
+cat /etc/fstab | sed -E 's/^[^#]/#&/g'
+```
+
+5、处理/etc/fstab路径,使用sed命令取出其目录名和基名
+
+```text
+[root@192 ~]# echo /etc/fstab | sed -E 's#(.*/[^/]+)\/([^/]+$)#\1#'
+/etc
+[root@192 ~]# echo /etc/fstab | sed -E 's#(.*/[^/]+)\/([^/]+$)#\2#'
+fstab
+```
+
+6、利用sed 取出ifconfig命令中本机的IPv4地址
+
+```bash
+[root@192 ~]# ifconfig ens160 | grep netmask | sed -E 's/.*inet (([0-9]{1,3}.){3}[0-9]{1,3}).*/\1/'
+192.168.48.11
+```
+
+7、统计centos安装光盘中Package目录下的所有rpm文件的以.分隔倒数第二个字段的重复次数
+
+```bash
+[root@192 ~]# ls /mnt/BaseOS/Packages/*.rpm | awk -F. '{print $(NF-1)}' | sort | uniq -c | sort -nr
+   1135 x86_64
+    430 i686
+    237 noarch
+```
+
+8、统计/etc/init.d/functions文件中每个单词的出现次数，并排序（用grep和sed两种方法分别实现）
+
+```bash
+grep -Eo '\<[a-zA-Z]+\>' /etc/init.d/functions | tr [[:upper:]] [[:lower:]] | sort |uniq -c| sort -nr
+
+sed -E -e's/[[:space:]]/\n/g' -e 's#[^a-zA-Z]#\n#g' /etc/init.d/functions | tr [[:upper:]] [[:lower:]] | sed '/^$/d'| sort | uniq -c |sort -nr
+```
+
+9、将文本文件的n和n\+1行合并为一行，n为奇数行
+
+```bash
+[root@192 ~]# seq 10|sed '$!N;s/\n//'
+12
+34
+56
+78
+910
+```
+
+### **awk**
+
+#### **awk** **工作原理和基本用法说明**
+
+awk: Aho, Weinberger, Kernighan，报告生成器，格式化文本输出，GNU/Linux发布的AWK目前由自
+
+由软件基金会（FSF）进行开发和维护，通常也称它为 GNU AWK
+
+有多种版本:
+
+- AWK: 原先来源于 AT & T 实验室的的AWK
+- NAWK: New awk，AT & T 实验室的AWK的升级版
+- GAWK: 即GNU AWK。所有的GNU/Linux发布版都自带GAWK，它与AWK和NAWK完全兼容
+
+gawk: 模式扫描和处理语言，可以实现下面功能
+
+- 文本处理
+- 输出格式化的文本报表
+- 执行算数运算
+- 执行字符串操作
+
+格式:
+
+```bash
+awk [options]  'program' var=value  file…
+awk [options]  -f programfile  var=value file…
+```
+
+说明:
+
+program通常是被放在单引号中，并可以由三种部分组成
+
+- BEGIN语句块
+- 模式匹配的通用语句块
+- END语句块
+
+常见选项:
+
+- -F "分隔符" 指明输入时用到的字段分隔符，默认的分隔符是若干个连续空白符
+- -v var=value 变量赋值
+
+\*\*Program格式: \*\*
+
+```bash
+pattern{action statements;..}
+```
+
+pattern: 决定动作语句何时触发及触发事件，比如: BEGIN,END,正则表达式等
+
+action statements: 对数据进行处理，放在{}内指明，常见: print, printf
+
+**awk** **工作过程**
+
+![Snipaste\_2025-07-03\_14-23-42](images/Snipaste_2025-07-03_14-23-42-1751523911956-3.png)
+
+第一步: 执行`BEGIN{action;… }`语句块中的语句
+
+第二步: 从文件或标准输入(stdin)读取一行，然后执行`pattern{ action;… }`语句块，它逐行扫描文件，从第一行到最后一行重复这个过程，直到文件全部被读取完毕。
+
+第三步: 当读至输入流末尾时，执行`END{action;…}`语句块
+
+BEGIN语句块在awk开始从输入流中读取行之前被执行，这是一个可选的语句块，比如变量初始化、打印输出表格的表头等语句通常可以写在BEGIN语句块中
+
+END语句块在awk从输入流中读取完所有的行之后即被执行，比如打印所有行的分析结果这类信息汇总都是在END语句块中完成，它也是一个可选语句块
+
+pattern语句块中的通用命令是最重要的部分，也是可选的。如果没有提供pattern语句块，则默认执行{print}，即打印每一个读取到的行，awk读取的每一行都会执行该语句块
+
+**分割符、域和记录**
+
+- 由分隔符分隔的字段（列column,域field）标记$$1,$$2...$$n称为域标识，$$0为所有域，注意: 和shell中变量\$符含义不同
+- 文件的每一行称为记录record
+- 如果省略action，则默认执行 print \$0 的操作
+
+**常用的action分类**
+
+- output statements: print,printf
+- Expressions: 算术，比较表达式等
+- Compound statements: 组合语句
+- Control statements: if, while等
+- input statements
+
+**awk控制语句**
+
+```bash
+{ statements;… } 组合语句
+if(condition) {statements;…} 
+if(condition) {statements;…} else {statements;…}
+while(conditon) {statments;…}
+do {statements;…} while(condition)
+for(expr1;expr2;expr3) {statements;…}
+break
+continue
+exit
+```
+
+#### **动作** **print**
+
+格式:
+
+```bash
+print item1, item2, ...
+```
+
+说明:
+
+- 逗号分隔符
+- 输出item可以字符串，也可是数值；当前记录的字段、变量或awk的表达式
+- 如省略item，相当于print \$0
+- 固定字符符需要用" " 引起来，而变量和数字不需要
+
+范例:
+
+```bash
+[root@centos8 ~]#awk '{print "hello,awk"}'
+[root@centos8 ~]#seq 10 | awk '{print "hello,awk"}'
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+hello,awk
+[root@centos8 ~]#seq 3 | awk '{print 2*3}'
+6
+6
+6
+[root@centos8 ~]#awk -F: '{print "wang"}' /etc/passwd
+[root@centos8 ~]#awk -F: '{print}' /etc/passwd
+[root@centos8 ~]#awk -F: '{print $0}' /etc/passwd
+[root@centos8 ~]#awk -F: '{print $1,$3}' /etc/passwd
+[root@centos8 ~]#awk -F: '{print $1"\t"$3}' /etc/passwd
+[root@centos8 ~]#grep "^UUID" /etc/fstab |awk {'print $2,$3'}
+/ xfs
+/boot ext4
+/data xfs
+swap swap
+```
+
+面题: 取出网站访问量最大的前3个IP
+
+```bash
+[root@VM_0_10_centos logs]# awk '{print $1}' nginx.access.log-20200428|sort | uniq -c |sort -nr|head -3
+  5498 122.51.38.20
+  2161 117.157.173.214
+  953 211.159.177.120
+  
+[root@centos8 ~]#awk '{print $1}' access_log |sort |uniq -c|sort -nr|head 
+  4870 172.20.116.228
+  3429 172.20.116.208
+  2834 172.20.0.222
+  2613 172.20.112.14
+  2267 172.20.0.227
+  2262 172.20.116.179
+  2259 172.20.65.65
+  1565 172.20.0.76
+  1482 172.20.0.200
+  1110 172.20.28.145
+```
+
+面试题: 取出分区利用率
+
+```bash
+[root@centos8 ~]#df | awk '{print $1,$5}' 
+Filesystem Use%
+devtmpfs 0%
+tmpfs 0%
+tmpfs 2%
+tmpfs 0%
+/dev/sda2 3%
+/dev/sda3 1%
+/dev/sda1 15%
+tmpfs 0%
+#使用扩展的正则表达式
+[root@centos8 ~]#df | awk -F"[[:space:]]+|%" '{print $5}'
+Use
+0
+0
+1
+0
+5
+1
+92
+1
+[root@centos8 ~]#df | awk -F"[ %]+" '{print $5}'
+Use
+0
+0
+1
+0
+3
+1
+19
+0
+[root@centos8 ~]#df | awk -F'[[:space:]]+|%' '{print $1,$5}' 
+Filesystem Use
+devtmpfs 0
+tmpfs 0
+tmpfs 2
+tmpfs 0
+/dev/sda2 3
+/dev/sda3 1
+/dev/sda1 15
+tmpfs 0
+[root@rocky8 ~]#df | awk -F" +|%" '{print $5}'
+Use
+0
+0
+1
+0
+3
+1
+17
+0
+[root@centos8 ~]#df | grep "^/dev/sd" | awk -F"[[:space:]]+|%" '{print $5}'
+5
+1
+92
+[root@centos8 ~]#df | grep '^/dev/sd'| awk -F'[[:space:]]+|%' '{print $1,$5}' 
+/dev/sda2 3
+/dev/sda3 1
+/dev/sda1 15
+[root@centos8 ~]#df | awk -F"[[:space:]]+|%" '/^\/dev\/sd/{print $5}'
+5
+1
+92
+[root@centos8 ~]#df | awk -F'[[:space:]]+|%' '/^\/dev\/sd/{print $1,$5}' 
+/dev/sda2 3
+/dev/sda3 1
+/dev/sda1 15
+[root@centos8 ~]#df|awk -F' +|%' '/^\/dev\/sd/{print $1,$5}'
+/dev/sda2 3
+/dev/sda3 2
+/dev/sda1 100
+```
+
+范例:取nginx的访问日志的中IP和时间
+
+```bash
+[root@VM_0_10_centos ~]# head -n 3 /apps/nginx/logs/nginx.access.log
+58.87.87.99 - - [09/Jun/2020:03:42:43 +0800] "POST /wp-cron.php?
+doing_wp_cron=1591645363.2316548824310302734375 HTTP/1.1" ""sendfileon
+128.14.209.154 - - [09/Jun/2020:03:42:43 +0800] "GET / HTTP/1.1" ""sendfileon
+64.90.40.100 - - [09/Jun/2020:03:43:11 +0800] "GET /wp-login.php HTTP/1.1"
+""sendfileon
+[root@VM_0_10_centos ~]# awk -F'[[ ]' '{print $1,$5}' 
+/apps/nginx/logs/nginx.access.log|head -3
+58.87.87.99 09/Jun/2020:03:42:43
+128.14.209.154 09/Jun/2020:03:42:43
+64.90.40.100 09/Jun/2020:03:43:11
+```
+
+面试题: 取 ifconfig 输出结果中的IP地址
+
+```bash
+[root@centos8 ~]#hostname -I | cat -A
+10.0.0.8 $
+[root@centos8 ~]#ifconfig eth0|sed -n '2p' |awk '{print $2}'|cat -A
+10.0.0.8$
+[root@centos8 ~]#ifconfig eth0 | awk '/netmask/{print $2}'
+10.0.0.8
+[root@centos6 ~]#ifconfig eth0 |awk -F " +|:" '/Mask/{print $4}'
+10.0.0.6
+[root@centos6 ~]#ip a show eth0 |awk -F' +|\/' '/\<inet\>/{print $3}' 2> 
+/dev/null
+10.0.0.6
+[root@centos8 ~]#ifconfig eth0| sed -rn '2s/^[^0-9]+([0-9.]+) .*$/\1/p'
+10.0.0.8
+[root@centos6 ~]#ifconfig eth0| sed -rn '2s/^[^0-9]+([0-9.]+) .*$/\1/p'
+10.0.0.6
+```
+
+面试题: 文件host\_list.log 如下格式，请提取".magedu.com"前面的主机名部分并写入到回到该文件中
+
+```bash
+[root@centos8 ~]#cat host_list.log
+1 www.magedu.com
+2 blog.magedu.com
+3 study.magedu.com
+4 linux.magedu.com
+5 python.magedu.com
+```
+
+```bash
+[root@centos8 ~]#awk -F"[ .]" '{print $2}' host_list.log
+www
+blog
+study
+linux
+python
+[root@centos8 ~]#awk -F"[ .]" '{print $2}' host_list.log >> host_list.log 
+[root@centos8 ~]#cat host_list.log
+1 www.magedu.com
+2 blog.magedu.com
+3 study.magedu.com
+4 linux.magedu.com
+5 python.magedu.com
+www
+blog
+study
+linux
+python
+```
+
+#### awk变量
+
+awk中的变量分为: 内置和自定义变量
+
+##### **常见的内置变量**
+
+FS: 输入字段分隔符，默认为空白字符,功能相当于 -F
+
+范例:
+
+```bash
+awk -v FS=':' '{print $1,FS,$3}' /etc/passwd
+awk -v FS=":" '{print $1FS$3}' /etc/passwd
+awk -F:  '{print $1,$3,$7}'  /etc/passwd 
+S=:;awk -v FS=$S '{print $1FS$3}' /etc/passwd
+[root@centos8 ~]#awk -v FS=":" '{print $1FS$3}' /etc/passwd |head -n3
+root:0
+bin:1
+daemon:2
+[root@centos8 ~]#S=:;awk -F$S  '{print $1,$3}' /etc/passwd|head -n3
+root 0
+bin 1
+daemon 2
+[root@centos8 ~]#
+#-F 和 FS变量功能一样，同时使用会冲突
+[root@centos8 ~]#awk -v FS=":" -F";" '{print $1FS$3}' /etc/passwd |head -n3
+root:x:0:0:root:/root:/bin/bash;
+bin:x:1:1:bin:/bin:/sbin/nologin;
+daemon:x:2:2:daemon:/sbin:/sbin/nologin;
+[root@centos8 ~]#awk -F";" -v FS=":" '{print $1FS$3}' /etc/passwd |head -n3
+root:0
+bin:1
+daemon:2
+#-F 和 FS变量功能一样，同时使用会 -F 优先级高
+[root@centos8 ~]#awk -v FS=":" -F";" '{print $1}' /etc/passwd |head -n3
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+[root@centos8 ~]#awk -v FS=";" -F":" '{print $1}' /etc/passwd |head -n3
+root
+bin
+daemon
+```
+
+OFS: 输出字段分隔符，默认为空白字符
+
+范例:
+
+```bash
+[root@centos8 ~]#awk -v FS=':'  '{print $1,$3,$7}'  /etc/passwd|head -n1
+root 0 /bin/bash
+[root@centos8 ~]#awk -v FS=':' -v OFS=':' '{print $1,$3,$7}'  
+/etc/passwd|head -n1
+root:0:/bin/bash
+```
+
+RS: 输入记录record分隔符，指定输入时的换行符
+
+```bash
+awk -v RS=' ' '{print }' /etc/passwd
+```
+
+ORS: 输出记录分隔符，输出时用指定符号代替换行符
+
+```bash
+awk -v RS=' ' -v ORS='###' '{print $0}' /etc/passwd
+```
+
+NF: 字段数量
+
+```bash
+#引用变量时，变量前不需加$
+[root@centos8 ~]#awk -F: '{print NF}' /etc/fstab
+[root@centos8 ~]#awk -F: '{print $(NF-1)}' /etc/passwd
+[root@centos8 ~]#ls /misc/cd/BaseOS/Packages/*.rpm |awk -F"." '{print $(NF-
+1)}'|sort |uniq -c
+  389 i686
+  208 noarch
+  1060 x86_64
+```
+
+面试题: 连接数最多的前3个IP
+
+```bash
+[root@centos8 ~]#awk -F" +|:" '{print $(NF-2)}' ss.log |sort |uniq -c|sort -nr|head -n3
+   12 223.88.255.148
+   11 119.250.197.118
+   10 183.202.63.36
+[root@centos8 ~]#awk -F" +|:" '/^ESTAB/{print $(NF-2)}' ss.log |sort |uniq -c|sort -nr|head -n3
+   12 223.88.255.148
+   10 183.202.63.36
+   9 117.152.155.119
+[root@centos8 ~]#ss -nt |grep "^ESTAB" | awk -F"[[:space:]]+|:" '{print $(NF-2)}'
+10.0.0.1
+10.0.0.7
+10.0.0.1
+[root@centos8 ~]#ss -nt |awk -F"[[:space:]]+|:" '/^ESTAB/{print $(NF-2)}'
+[root@centos8 ~]#ss -nt|awk -F: '{print $(NF-1)}' |awk '/^[0-9]/{print $NF}'| sort |uniq -c |head -n 3
+[root@wang-liyun-pc ~]# awk -F' +|:' 'NR!=1{print $(NF-2)}' ss.log|sort |uniq -c
+   1 100.100.30.25
+   86 39.164.140.134
+```
+
+范例: 每十分钟检查将连接数超过100个以上的IP放入黑名单拒绝访问
+
+```bash
+[root@centos8 ~]#cat deny_dos.sh
+LINK=100
+while true;do
+ ss -nt | awk -F"[[:space:]]+|:" '/^ESTAB/{print $(NF-2)}'|sort |uniq -
+c|while read count ip;do 
+ if [ $count -gt $LINK ];then
+  iptables -A INPUT -s $ip -j REJECT
+ fi
+ done
+done
+[root@centos8 ~]#chmod +x /root/deny_dos.sh
+[root@centos8 ~]#crontab -e
+[root@centos8 ~]#crontab -l 
+*/10 * * * *  /root/deny_dos.sh
+```
+
+eg
+
+```bash
+[root@centos8 ~]#cat deny_dos.sh
+IPLIST=`awk -F" +|:" '/^ESTAB/{print $(NF-2)}' ss.log |sort |uniq -c|sort -
+nr|head -3|awk '{print $2}'`
+for ip in $IPLIST;do
+  iptables -A INPUT -s $ip -j REJECT
+done
+```
+
+eg
+
+NR: 记录的编号
+
+```bash
+[root@centos8 ~]#awk '{print NR,$0}' /etc/issue /etc/centos-release
+1 \S
+2 Kernel \r on an \m
+3
+4 CentOS Linux release 8.1.1911 (Core)
+```
+
+范例: 取ifconfig输出结果中的IP地址
+
+```bash
+[root@centos8 ~]#ifconfig eth0 | awk '/netmask/{print $2}'
+10.0.0.8
+[root@centos8 ~]#ifconfig eth0 | awk 'NR==2{print $2}'
+10.0.0.8
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#awk -F: '{print NR}' /etc/passwd
+1
+2
+3
+.......
+[root@centos8 ~]#awk -F: 'END{print NR}' /etc/passwd
+57
+[root@centos8 ~]#awk -F: 'BEGIN{print NR}' /etc/passwd
+0
+```
+
+FNR: 各文件分别计数，记录的编号
+
+```bash
+awk '{print FNR}' /etc/fstab /etc/inittab
+
+[root@centos8 ~]#awk '{print NR,$0}' /etc/issue /etc/redhat-release 
+1 \S
+2 Kernel \r on an \m
+3
+4 CentOS Linux release 8.0.1905 (Core) 
+[root@centos8 script40]#awk '{print FNR,$0}' /etc/issue /etc/redhat-release 
+1 \S
+2 Kernel \r on an \m
+3
+1 CentOS Linux release 8.0.1905 (Core)
+```
+
+FILENAME: 当前文件名
+
+```bash
+[root@centos8 ~]#awk '{print FILENAME}' /etc/fstab
+[root@centos8 ~]#awk '{print FNR,FILENAME,$0}' /etc/issue /etc/redhat-release 
+1 /etc/issue \S
+2 /etc/issue Kernel \r on an \m
+3 /etc/issue 
+1 /etc/redhat-release CentOS Linux release 8.0.1905 (Core)
+```
+
+ARGC: 命令行参数的个数
+
+```bash
+[root@centos8 ~]#awk '{print ARGC}' /etc/issue /etc/redhat-release 
+3
+3
+3
+3
+[root@centos8 ~]#awk 'BEGIN{print ARGC}' /etc/issue /etc/redhat-release 
+3
+```
+
+ARGV: 数组，保存的是命令行所给定的各参数，每一个参数: ARGV\[0\]，......
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{print ARGV[0]}' /etc/issue /etc/redhat-release 
+awk
+[root@centos8 ~]#awk 'BEGIN{print ARGV[1]}' /etc/issue /etc/redhat-release 
+/etc/issue
+[root@centos8 ~]#awk 'BEGIN{print ARGV[2]}' /etc/issue /etc/redhat-release 
+/etc/redhat-release
+[root@centos8 ~]#awk 'BEGIN{print ARGV[3]}' /etc/issue /etc/redhat-release 
+```
+
+##### **自定义变量**
+
+自定义变量是区分字符大小写的,使用下面方式进行赋值
+
+```bash
+-v var=value 
+在program中直接定义
+```
+
+```bash
+[root@centos8 ~]#awk -v test1=test2="hello,gawk" 'BEGIN{print test1,test2}'  
+test2=hello,gawk 
+[root@centos8 ~]#awk -v test1=test2="hello1,gawk" 
+'BEGIN{test1=test2="hello2,gawk";print test1,test2}'  
+hello2,gawk hello2,gawk
+```
+
+```bash
+awk -v test='hello gawk' '{print test}' /etc/fstab 
+awk -v test='hello gawk' 'BEGIN{print test}'
+awk 'BEGIN{test="hello,gawk";print test}'
+awk -F: '{sex="male";print $1,sex,age;age=18}' /etc/passwd
+cat awkscript
+{print script,$1,$2}
+awk -F: -f awkscript script="awk" /etc/passwd
+```
+
+#### **动作** **printf**
+
+printf 可以实现格式化输出
+
+```bash
+printf "FORMAT", item1, item2, ...
+```
+
+说明:
+
+- 必须指定FORMAT
+- 不会自动换行，需要显式给出换行控制符 \\n
+- FORMAT中需要分别为后面每个item指定格式符
+
+格式符: 与item一一对应
+
+```bash
+%s: 显示字符串
+%d, %i: 显示十进制整数
+%f: 显示为浮点数
+%e, %E: 显示科学计数法数值 
+%c: 显示字符的ASCII码
+%g, %G: 以科学计数法或浮点形式显示数值
+%u: 无符号整数
+%%: 显示%自身
+```
+
+修饰符
+
+```bash
+#[.#] 第一个数字控制显示的宽度；第二个#表示小数点后精度，如: %3.1f
+- 左对齐（默认右对齐） 如: %-15s
++  显示数值的正负符号  如: %+d
+```
+
+范例:
+
+```bash
+awk -F: '{printf "%s",$1}' /etc/passwd
+awk -F: '{printf "%s\n",$1}' /etc/passwd
+awk -F: '{printf "%20s\n",$1}' /etc/passwd
+awk -F: '{printf "%-20s\n",$1}' /etc/passwd
+awk -F: '{printf "%-20s %10d\n",$1,$3}' /etc/passwd
+awk -F: '{printf "Username: %s\n",$1}' /etc/passwd
+awk -F: '{printf "Username: %sUID:%d\n",$1,$3}' /etc/passwd
+awk -F: '{printf "Username: %25sUID:%d\n",$1,$3}' /etc/passwd
+awk -F: '{printf "Username: %-25sUID:%d\n",$1,$3}' /etc/passwd
+```
+
+#### **操作符**
+
+算术操作符:
+
+```bash
+x+y, x-y, x*y, x/y, x^y, x%y
+-x: 转换为负数
++x: 将字符串转换为数值
+```
+
+字符串操作符: 没有符号的操作符，字符串连接
+
+赋值操作符:
+
+```bash
+=, +=, -=, *=, /=, %=, ^=，++, --
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{i=0;print i++,i}'
+0 1
+[root@centos8 ~]#awk 'BEGIN{i=0;print ++i,i}'
+1 1
+```
+
+```bash
+[root@centos8 ~]#seq 10 | awk 'n++'
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#awk -v n=0 '!n++' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+[root@centos8 ~]#awk -v n=0 '!n++{print n}' /etc/passwd
+1
+[root@centos8 ~]#awk -v n=1 '!n++{print n}' /etc/passwd
+[root@centos8 ~]#awk -v n=0 '!++n{print n}' /etc/passwd
+[root@centos8 ~]#awk -v n=0 '!++n' /etc/passwd
+[root@centos8 ~]#awk -v n=-1 '!++n' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+```
+
+比较操作符:
+
+```bash
+==, !=, >, >=, <, <=
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk 'NR==2' /etc/issue
+Kernel \r on an \m
+[root@centos8 ~]#awk -F: '$3>=1000' /etc/passwd
+nobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin
+wang:x:1000:1000:wang:/home/wang:/bin/bash
+mage:x:1001:1001::/home/mage:/bin/bash
+```
+
+范例: 取奇，偶数行
+
+```bash
+[root@centos8 ~]#seq 10 | awk 'NR%2==0'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | awk 'NR%2==1'
+1
+3
+5
+7
+9
+[root@centos8 ~]#seq 10 | awk 'NR%2!=0'
+1
+3
+5
+7
+9
+```
+
+模式匹配符:
+
+```bash
+~ 左边是否和右边匹配，包含关系
+!~ 是否不匹配
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#awk -F: '$0 ~ /root/{print $1}' /etc/passwd
+[root@centos8 ~]#awk -F: '$0 ~ "^root"{print $1}' /etc/passwd
+[root@centos8 ~]#awk '$0 !~ /root/'  /etc/passwd
+[root@centos8 ~]#awk '/root/'  /etc/passwd
+[root@centos8 ~]#awk -F: '/r/' /etc/passwd
+[root@centos8 ~]#awk -F: '$3==0'   /etc/passwd
+[root@centos8 ~]#df | awk -F"[[:space:]]+|%" '$0 ~ /^\/dev\/sd/{print $5}'
+5
+1
+92
+[root@localhost ~]# df | awk -F'[[:space:]]+|%' '/^\/dev\// {print $(NF-2)}'
+5
+1
+22
+[root@centos8 ~]#ifconfig eth0 | awk 'NR==2{print $2}'
+10.0.0.8
+```
+
+逻辑操作符:
+
+```bash
+与: &&，并且关系
+或: ||，或者关系
+非: !，取反
+```
+
+范例: ！取反
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{print i}'
+[root@centos8 ~]#awk 'BEGIN{print !i}'
+1
+[root@centos8 ~]#awk -v i=10 'BEGIN{print !i}'
+0
+[root@centos8 ~]#awk -v i=-3 'BEGIN{print !i}'
+0
+[root@centos8 ~]#awk -v i=0 'BEGIN{print !i}'
+1
+[root@centos8 ~]#awk -v i=abc 'BEGIN{print !i}'
+0
+[root@centos8 ~]#awk -v i='' 'BEGIN{print !i}'
+1
+```
+
+范例:
+
+```bash
+awk -F:  '$3>=0 && $3<=1000 {print $1,$3}' /etc/passwd
+awk -F:  '$3==0 || $3>=1000 {print $1,$3}' /etc/passwd 
+awk -F:  '!($3==0) {print $1,$3}'   /etc/passwd
+awk -F:  '!($3>=500) {print $1,$3}' /etc/passwd
+```
+
+条件表达式（三目表达式）
+
+```bash
+selector?if-true-expression:if-false-expression
+```
+
+eg
+
+```bash
+awk -F: '{$3>=1000?usertype="Common User":usertype="SysUser";printf "%-20s:%12s\n",$1,usertype}'  /etc/passwd
+[root@centos8 ~]#df | awk -F"[ %]+" '/^\/dev\/sd/{$(NF-1)>10?disk="full":disk="OK";print $(NF-1),disk}'
+3 OK
+1 OK
+13 full
+```
+
+范例:
+
+```bash
+[root@rocky8 ~]#cat scores.txt
+wang 100
+li 90
+zhang 50
+zhao 80
+han 70
+[root@rocky8 ~]#awk '$2>=60?type="pass":type="nopass"{print $1,type}' scores.txt
+wang pass
+li pass
+zhang nopass
+zhao pass
+han pass
+```
+
+#### **模式PATTERN**
+
+PATTERN:根据pattern条件，过滤匹配的行，再做处理
+
+- 如果未指定: 空模式，匹配每一行
+
+范例:
+
+```bash
+[root@centos8 ~]#awk -F: '{print $1,$3}' /etc/passwd
+```
+
+- /regular expression/: 仅处理能够模式匹配到的行，需要用/ /括起来
+
+范例:
+
+```bash
+[root@centos8 ~]#awk  '/^UUID/{print $1}'   /etc/fstab
+[root@centos8 ~]#awk  '!/^UUID/{print $1}'  /etc/fstab
+[root@centos8 ~]#df | awk '/^\/dev\/sd/'
+/dev/sda2   104806400 4935924 99870476  5% /
+/dev/sda3    52403200 398876 52004324  1% /data
+/dev/sda1     999320 848572   81936 92% /boot
+```
+
+- relational expression: 关系表达式，结果为“真"才会被处理
+  真: 结果为非0值，非空字符串
+  假: 结果为空字符串或0值
+
+eg
+
+```bash
+[root@centos8 ~]#seq 10 | awk '1' 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk '0'
+[root@centos8 ~]#seq 10 | awk '"false"'
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk '""' 
+[root@centos8 ~]#seq 10 | awk '"0"' 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk 'true' 
+[root@centos8 ~]#seq 10 | awk 'false' 
+[root@centos8 ~]#seq 10 | awk 'wang' 
+[root@centos8 ~]#seq 10 | awk 'magedu' 
+[root@centos8 ~]#seq 10 | awk '0' 
+[root@centos8 ~]#seq 10 | awk '" "' 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk 'magedu' 
+[root@centos8 ~]#seq 10 | awk -v magedu=0 'magedu' 
+[root@centos8 ~]#seq 10 | awk -v magedu="" 'magedu' 
+[root@centos8 ~]#seq 10 | awk -v magedu="0" 'magedu' 
+[root@centos8 ~]#seq 10 | awk -v magedu="abc" 'magedu' 
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk '1' /etc/passwd
+[root@centos8 ~]#awk '!1' /etc/passwd
+[root@centos8 ~]#awk '!0' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+.......
+[root@centos8 ~]#awk '1' /etc/issue
+\S
+Kernel \r on an \m
+[root@centos8 ~]#awk '0' /etc/issue
+[root@centos8 ~]#awk '"magedu"' /etc/issue
+\S
+Kernel \r on an \m
+[root@centos8 ~]#awk '""' /etc/issue
+[root@centos8 ~]#awk 'magedu' /etc/issue
+[root@centos8 ~]#awk 'magedu' /etc/issue
+[root@centos8 ~]#awk -v magedu=wang 'magedu' /etc/issue
+\S
+Kernel \r on an \m
+[root@centos8 ~]#awk -v magedu="" 'magedu' /etc/issue
+[root@centos8 ~]#awk -v magedu="0" 'magedu' /etc/issue
+[root@centos8 ~]#awk -v magedu=0 'magedu' /etc/issue
+[root@centos8 ~]#awk '"0"' /etc/issue
+\S
+Kernel \r on an \m
+[root@centos8 ~]#awk '0' /etc/issue
+```
+
+范例:
+
+```bash
+seq 10 | awk  'i=0'
+seq 10 | awk  'i=1'
+seq 10 | awk  'i=!i'
+seq 10 | awk  '{i=!i;print i}'
+seq 10 | awk  '!(i=!i)'       
+seq 10 | awk -v i=1 'i=!i'
+[root@centos8 ~]#seq 10 | awk  'i=0'
+[root@centos8 ~]#seq 10 | awk  'i=1'
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk  'i=1'
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+[root@centos8 ~]#seq 10 | awk  'i=0'
+[root@centos8 ~]#seq 10 | awk  'i=!i'
+1
+3
+5
+7
+9
+[root@centos8 ~]#seq 10 | awk  '!(i=!i)'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | awk -v i=1 'i=!i'
+2
+4
+6
+8
+10
+[root@centos8 ~]#seq 10 | awk -v i=0 'i=!i'
+1
+3
+5
+7
+9
+[root@centos8 ~]#seq 10 | awk  '{i=!i;print i}'
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+```
+
+eg
+
+```bash
+awk -F: 'i=1;j=1{print i,j}' /etc/passwd
+Awk -F: '$3>=1000{print $1,$3}' /etc/passwd
+awk -F: '$3<1000{print $1,$3}' /etc/passwd
+awk -F: '$NF=="/bin/bash"{print $1,$NF}' /etc/passwd
+[root@centos8 ~]#awk -F: '$NF=="/bin/bash"{print $1,$NF}' /etc/passwd
+root /bin/bash
+wang /bin/bash
+mage /bin/bash
+[root@centos8 ~]#awk -F: '$NF ~ /bash$/{print $1,$NF}' /etc/passwd
+root /bin/bash
+wang /bin/bash
+mage /bin/bash
+```
+
+- line ranges: 行范围
+
+不支持直接用行号，但可以使用变量NR间接指定行号
+
+/pat1/,/pat2/ 不支持直接给出数字格式
+
+范例:
+
+```bash
+[root@centos8 ~]#seq 10 | awk 'NR>=3 && NR<=6'
+3
+4
+5
+6
+[root@centos8 ~]#awk 'NR>=3 && NR<=6{print NR,$0}' /etc/passwd
+3 daemon:x:2:2:daemon:/sbin:/sbin/nologin
+4 adm:x:3:4:adm:/var/adm:/sbin/nologin
+5 lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+6 sync:x:5:0:sync:/sbin:/bin/sync
+[root@centos8 ~]#sed -n '3,6p' /etc/passwd
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+sync:x:5:0:sync:/sbin:/bin/sync
+[root@centos8 ~]#awk '/^bin/,/^adm/' /etc/passwd
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+[root@centos8 ~]#sed -n '/^bin/,/^adm/p' /etc/passwd
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+```
+
+- BEGIN/END模式
+
+```bash
+BEGIN{}: 仅在开始处理文件中的文本之前执行一次
+END{}: 仅在文本处理完成之后执行一次
+范例
+```
+
+eg
+
+```bash
+awk -F : 'BEGIN {print "USER USERID"} {print $1":"$3} END{print "END FILE"}' /etc/passwd
+awk -F: '{print "USER USERID";print $1":"$3} END{print "END FILE"}' /etc/passwd
+awk -F: 'BEGIN{print "USER UID \n--------------- "}{print $1,$3}' /etc/passwd
+awk -F: 'BEGIN{print "USER UID \n--------"}{print $1,$3}END{print "=========="}' /etc/passwd
+[root@centos8 ~]#awk -F:  'BEGIN{printf "--------------------------------\n%-20s|%10s|\n--------------------------------\n","username","uid"}{printf "%-20s|%10d|\n--------------------------------\n",$1,$3}' /etc/passwd
+--------------------------------
+username            |       uid|
+--------------------------------
+root                |         0|
+--------------------------------
+bin                 |         1|
+--------------------------------
+daemon              |         2|
+--------------------------------
+adm                 |         3|
+--------------------------------
+```
+
+#### **条件判断** **if-else**
+
+```bash
+#语法
+if(condition){statement;…}[else statement]
+if(condition1){statement1}else if(condition2){statement2}else if(condition3){statement3}...... else {statementN}
+```
+
+使用场景: 对awk取得的整行或某个字段做条件判断
+
+范例:
+
+```bash
+awk -F: '{if($3>=1000)print $1,$3}' /etc/passwd
+awk -F: '{if($3<=100){print "<=100",$3}else if ($3<=1000) {print "<=1000",$3} else{print ">=1000",$3}}' /etc/passwd
+awk -F: '{if($NF=="/bin/bash") print $1}' /etc/passwd
+awk '{if(NF>5) print $0}' /etc/fstab
+awk -F: '{if($3>=1000) {printf "Common user: %s\n",$1} else {printf "root or Sysuser: %s\n",$1}}' /etc/passwd
+awk -F: '{if($3>=1000) printf "Common user: %s\n",$1; else printf "root or Sysuser: %s\n",$1}' /etc/passwd
+df -h|awk -F% '/^\/dev\/sd/{print $1}'| awk '$NF>=80{print $1,$5}'
+df | awk -F"[[:space:]]+|%" '/^\/dev\/sd/{if($5>80)print $1,$5}'
+[root@centos8 ~]#df | awk -F' +|%' '/^\/dev\/sd/{if($5>=10)print $1,$5}' /dev/sda1 15
+awk 'BEGIN{ test=100;if(test>90){print "very good"} else if(test>60){ print "good"}else{print "no pass"}}'
+```
+
+范例:
+
+```bash
+root@ubuntu2004:~# df | awk -F'[ %]+' '/\/dev\/.d./{if($5>=10){print $1,$5}}'
+/dev/sda3 22
+root@ubuntu2004:~# df | awk -F' +|%' '/^\/dev\/sd/{if($5>=10)print $1,$5}'
+/dev/sda3 22
+root@ubuntu2004:~# df | awk -F'[[:space:]]+|%' '/^\/dev\/sd/{if($5>=10)print $1,$5}'
+/dev/sda3 22
+[root@centos8 ~]#df | awk -F"[ %]+" '/^\/dev\/sd/{if($(NF-1)>10)print $(NF-1)" full";else {print $(NF-1)" OK"}}'
+3 OK
+1 OK
+13 full
+[root@centos8 ~]#df | awk -F"[ %]+" '/^\/dev\/sd/{if($(NF-1)>10){print $(NF-1)" full"}else {print $(NF-1)" OK"}}'
+3 OK
+1 OK
+13 full
+```
+
+#### **条件判断** **switch**
+
+```bash
+#语法
+switch(expression) {case VALUE1 or /REGEXP/: statement1; case VALUE2 or /REGEXP2/: statement2; ...; default: statementn}
+```
+
+#### **循环** **while**
+
+```bash
+while (condition) {statement;…}
+```
+
+条件“真"，进入循环；条件“假"，退出循环
+
+使用场景:
+
+- 对一行内的多个字段逐一类似处理时使用
+- 对数组中的各元素逐一处理时使用
+
+范例:
+
+```bash
+root@ubuntu2004:~# awk -v i=1 -v sum=0 'BEGIN{while(i<=100){sum+=i;i++};print sum}'
+5050
+```
+
+示例:
+
+```bash
+#内置函数length()返回字符数，而非字节数
+[root@centos8 ~]#awk 'BEGIN{print length("hello")}'
+5
+[root@centos8 ~]#awk 'BEGIN{print length("马哥教育")}'
+4
+[root@centos7 ~]#awk '/^[[:space:]]*linux16/{i=1;while(i<=NF){print $i,length($i); i++}}' /etc/grub2.cfg
+linux16 7
+/vmlinuz-3.10.0-1062.el7.x86_64 31
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+ro 2
+crashkernel=auto 16
+rhgb 4
+quiet 5
+net.ifnames=0 13
+linux16 7
+/vmlinuz-0-rescue-b12558570741487c9328c996e3265b09 50
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+ro 2
+crashkernel=auto 16
+rhgb 4
+quiet 5
+net.ifnames=0 13
+[root@centos7 ~]#awk '/^[[:space:]]*linux16/{i=1;while(i<=NF) {if(length($i)>=10){print $i,length($i)}; i++}}' /etc/grub2.cfg
+/vmlinuz-3.10.0-1062.el7.x86_64 31
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+crashkernel=auto 16
+net.ifnames=0 13
+/vmlinuz-0-rescue-b12558570741487c9328c996e3265b09 50
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+crashkernel=auto 16
+net.ifnames=0 13
+[root@centos8 ~]#awk 'BEGIN{ total=0;i=1;while(i<=100){total+=i;i++};print 
+total}'
+5050
+```
+
+#### **循环** **do-while**
+
+```bash
+do {statement;…}while(condition)
+```
+
+意义: 无论真假，至少执行一次循环体
+
+do-while循环
+
+语法: `do {statement;…}while(condition) `
+
+意义: 无论真假，至少执行一次循环体
+
+范例:
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{ total=0;i=1;do{ total+=i;i++;}while(i<=100);print total}'
+5050
+```
+
+#### **循环** **for**
+
+语法
+
+```bash
+for(expr1;expr2;expr3) {statement;…}
+```
+
+常见语法
+
+```bash
+for(variable assignment;condition;iteration process) {for-body}
+```
+
+特殊用法: 能够遍历数组中的元素
+
+```bash
+for(var in array) {for-body}
+```
+
+范例:
+
+```bash
+root@ubuntu2004:~# awk 'BEGIN{sum=0;for(i=1;i<=100;i++){sum+=i};print sum}'
+5050
+root@ubuntu2004:~# for((i=1,sum=0;i<=100;i++));do let sum+=i;done;echo $sum
+5050
+```
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{total=0;for(i=1;i<=100;i++){total+=i};print total}'
+5050
+```
+
+面试题: 文件abc,txt只有一行数字，计算其总和
+
+```bash
+[root@centos8 ~]#cat abc.txt
+1 2 3 4 5
+[root@centos8 ~]#cat abc.txt |awk '{for(i=1;i<=NF;i++){sum+=i};print sum}'
+15
+[root@centos8 ~]#cat abc.txt|tr ' ' + |bc
+15
+[root@centos8 ~]#sum=0;for i in `cat abc.txt`;do let sum+=i;done;echo $sum
+15
+```
+
+范例:
+
+```bash
+[root@centos7 ~]#awk '/^[[:space:]]*linux16/{for(i=1;i<=NF;i++) {print 
+$i,length($i)}}' /etc/grub2.cfg
+linux16 7
+/vmlinuz-3.10.0-1062.el7.x86_64 31
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+ro 2
+crashkernel=auto 16
+rhgb 4
+quiet 5
+net.ifnames=0 13
+linux16 7
+/vmlinuz-0-rescue-b12558570741487c9328c996e3265b09 50
+root=UUID=bebb9244-bbb8-4c69-9249-54a36c75155e 46
+ro 2
+crashkernel=auto 16
+rhgb 4
+quiet 5
+net.ifnames=0 13
+```
+
+性能比较
+
+```bash
+time (awk 'BEGIN{ total=0;for(i=0;i<=10000;i++){total+=i;};print total;}')
+time (total=0;for i in {1..10000};do total=$(($total+i));done;echo $total)
+time (for ((i=0;i<=10000;i++));do let total+=i;done;echo $total)
+time (seq -s "+" 10000|bc)
+```
+
+范例: 取出字符串中的数字
+
+```bash
+echo 'dsFUs34tg*fs5a%8ar%$#@' |awk -F "" '
+{
+ for(i=1;i<=NF;i++) 
+ { 
+  if ($i ~ /[0-9]/)       
+  {
+   str=(str $i)
+  } 
+ } 
+ print str
+}'
+```
+
+#### **continue** **和** **break**
+
+continue 中断本次循环
+
+break 中断整个循环
+
+格式:
+
+```bash
+continue [n]
+break [n]
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{for(i=1;i<=100;i++){if(i==50)continue;sum+=i};print sum}'
+5000
+[root@centos8 ~]#awk 'BEGIN{for(i=1;i<=100;i++){if(i==50)break;sum+=i};print sum}'
+1225
+[root@centos8 ~]#awk 'BEGIN{sum=0;for(i=1;i<=100;i++){if(i%2==0)continue;sum+=i}print sum}'
+2500
+[root@centos8 ~]#awk 'BEGIN{sum=0;for(i=1;i<=100;i++){if(i==50)break;sum+=i}print sum}'
+1225
+```
+
+#### next
+
+next 可以提前结束对本行处理而直接进入下一行处理（awk自身循环）
+
+范例:
+
+```bash
+[root@centos8 ~]#awk -F: '{if($3%2!=0) next; print $1,$3}' /etc/passwd
+root 0
+daemon 2
+lp 4
+shutdown 6
+mail 8
+games 12
+ftp 14
+nobody 65534
+polkitd 998
+gluster 996
+rtkit 172
+rpc 32
+chrony 994
+saslauth 992
+clevis 984
+pegasus 66
+colord 982
+setroubleshoot 980
+gdm 42
+gnome-initial-setup 978
+sshd 74
+avahi 70
+tcpdump 72
+wang 1000
+```
+
+#### **数组**
+
+awk的数组为关联数组
+
+格式
+
+```bash
+array_name[index-expression]
+```
+
+范例:
+
+```bash
+weekdays["mon"]="Monday"
+```
+
+index-expression
+
+- 利用数组，实现 k/v 功能
+- 可使用任意字符串；字符串要使用双引号括起来
+- 如果某数组元素事先不存在，在引用时，awk会自动创建此元素，并将其值初始化为“空串"
+- 若要判断数组中是否存在某元素，要使用“index in array"格式进行遍历
+
+范例:
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{weekdays["mon"]="Monday";weekdays["tue"]="Tuesday";print weekdays["mon"]}'
+Monday
+```
+
+eg去重
+
+```bash
+awk '!line[$0]++' dupfile
+awk '{print !line[$0]++, $0, line[$0]}' dupfile
+awk '{!line[$0]++;print $0, line[$0]}' dupfile
+```
+
+范例: 判断数组索引是否存在
+
+```bash
+[root@centos8 ~]# awk 'BEGIN{array["i"]="x"; array["j"]="y" ; print "i" in array, "y" in array }'
+1 0
+[root@centos8 ~]#awk 'BEGIN{array["i"]="x"; array["j"]="y" ;if ("i" in array ) {print "存在"}else{print "不存在"}}'
+存在
+[root@centos8 ~]#awk 'BEGIN{array["i"]="x"; array["j"]="y" ;if ("abc" in array ) {print "存在"}else{print "不存在"}}'
+不存在
+```
+
+若要遍历数组中的每个元素，要使用 for 循环
+
+```bash
+for(var in array) {for-body}
+```
+
+注意: var 会遍历array的每个索引
+
+范例: 遍历数组
+
+```bash
+[root@centos8 ~]#awk 
+'BEGIN{weekdays["mon"]="Monday";weekdays["tue"]="Tuesday";for(i in weekdays) {print i,weekdays[i]}}'
+tue Tuesday
+mon Monday
+[root@centos8 ~]#awk 
+'BEGIN{students[1]="daizong";students[2]="junzong";students[3]="kunzong";for(x in students){print x":"students[x]}}'
+1:daizong
+2:junzong
+3:kunzong
+[root@centos8 ~]#awk 'BEGIN {
+a["x"] = "welcome"
+a["y"] = "to"
+a["z"] = "Magedu"
+for (i in a) {
+   print i,a[i]
+}
+}'
+x welcome
+y to
+z Magedu
+[root@centos8 ~]#awk -F: '{user[$1]=$3}END{for(i in user){print "username: "i,"uid: "user[i]}}' /etc/passwd
+username: adm uid: 3
+username: rpc uid: 32
+username: dnsmasq uid: 985
+username: radvd uid: 75
+username: sync uid: 5
+username: mail uid: 8
+username: exim uid: 93
+username: tss uid: 59
+username: gluster uid: 996
+username: unbound uid: 995
+username: halt uid: 7
+```
+
+范例: 显示主机的连接状态出现的次数
+
+```bash
+[root@centos8 ~]#awk 'NR!=1{print $1}' ss.log |sort |uniq -c
+  118 ESTAB
+   1 FIN-WAIT-1
+   11 LAST-ACK
+[root@centos8 ~]#cat ss.log | sed -nr '1!s/^([^0-9]+) .*/\1/p'|sort |uniq -c
+  529 ESTAB  
+   9 LISTEN  
+  128 SYN-RECV 
+   95 TIME-WAIT
+   
+[root@centos8 ~]#ss -ant | awk 'NR!=1{state[$1]++}END{for(i in state){print i,state[i]}}'
+SYN-RECV 128
+LISTEN 9
+ESTAB 529
+TIME-WAIT 95
+[root@centos8 ~]#netstat -tan | awk '/^tcp/{state[$NF]++}END{for(i in state){print i,state[i]}}'
+LISTEN 9
+SYN_RECV 126
+ESTABLISHED 523
+FIN_WAIT2 40
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk '{ip[$1]++}END{for(i in ip){print i,ip[i]}}' /var/log/httpd/access_log
+172.20.0.200 1482
+172.20.21.121 2
+172.20.30.91 29
+172.16.102.29 864
+172.20.0.76 1565
+172.20.9.9 15
+172.20.1.125 463
+172.20.61.11 2
+172.20.73.73 198
+[root@centos8 ~]#awk '{ip[$1]++}END{for(i in ip){print ip[i],i}}' access_log |sort -nr| head -3
+4870 172.20.116.228
+3429 172.20.116.208
+2834 172.20.0.222[root@centos8 ~]#awk '{ip[$1]++}END{for(i in ip){print i,ip[i]}}' access_log 
+|sort -k2 -nr|head -3
+172.20.116.228 4870
+172.20.116.208 3429
+172.20.0.222 2834
+```
+
+范例: 封掉查看访问日志中连接次数超过1000次的IP
+
+```bash
+[root@centos8 ~]#awk '{ip[$1]++}END{for(i in ip){if(ip[i]>=1000){system("iptables -A INPUT -s "i" -j REJECT")}}}' nginx.access.log-20200428
+```
+
+范例: 多维数组
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{
+ array[1][1]=11
+ array[1][2]=12
+ array[1][3]=13
+ array[2][1]=21
+ array[2][2]=22
+ array[2][3]=23
+ for (i in array)
+   for (j in array[i])
+     print array[i][j]
+ }'
+#输出如下
+11
+12
+13
+21
+22
+23
+```
+
+eg
+
+```bash
+root@ubuntu2004:~# cat score.txt
+name sex score
+alice f 100
+bob  m 90
+ming m 95
+hong f 90
+root@ubuntu2004:~# awk 'NR!=1{if($2=="m")
+{m_sum+=$3;m_num++}else{f_sum+=$3;f_num++}}END{print "男生平均成绩
+="m_sum/m_num,"女生平均成绩="f_sum/f_num}' score.txt
+男生平均成绩=92.5 女生平均成绩=95
+root@ubuntu2004:~# awk 'NR!=1{score[$2]+=$3;num[$2]++}END{for(i in score){print 
+i,score[i]/num[i]}}' score.txt 
+m 92.5
+f 95
+root@ubuntu2004:~# awk 'NR!=1{score[$2]+=$3;num[$2]++}END{for(i in score)
+{if(i=="m"){print "男生平均成绩=",score[i]/num[i]}else{print "女生平均成绩
+=",score[i]/num[i]}}}' score.txt 
+男生平均成绩= 92.5
+女生平均成绩= 95
+```
+
+#### **awk** **函数**
+
+awk 的函数分为内置和自定义函数
+
+##### **常见内置函数**
+
+数值处理
+
+```bash
+rand(): 返回0和1之间一个随机数
+srand(): 配合rand() 函数,生成随机数的种子
+int(): 返回整数
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{srand();print rand()}'
+0.790437
+[root@centos8 ~]#awk 'BEGIN{srand();print rand()}'
+0.283736
+[root@centos8 ~]#awk 'BEGIN{srand();print rand()}'
+0.948082
+[root@centos8 ~]#awk 'BEGIN{srand();print rand()}'
+0.371798
+[root@centos8 ~]#awk 'BEGIN{srand(); for (i=1;i<=10;i++)print int(rand()*100) }' 
+35
+17
+35
+95
+19
+15
+70
+54
+46
+93
+```
+
+字符串处理:
+
+```bash
+length([s]): 返回指定字符串的长度
+sub(r,s,[t]): 对t字符串搜索r表示模式匹配的内容，并将第一个匹配内容替换为s
+gsub(r,s,[t]): 对t字符串进行搜索r表示的模式匹配的内容，并全部替换为s所表示的内容
+split(s,array,[r]): 以r为分隔符，切割字符串s，并将切割后的结果保存至array所表示的数组中，第
+一个索引值为1,第二个索引值为2,…
+```
+
+范例: 统计用户名的长度
+
+```bash
+root@ubuntu2004:~# cut -d: -f1 /etc/passwd | awk '{print length()}'
+root@ubuntu2004:~# awk -F: '{print length($1)}' /etc/passwd
+```
+
+eg
+
+```bash
+awk 'BEGIN{print length("hello")}'
+
+#只替换第一个匹配
+awk 'BEGIN{s="abc123abc"; sub(/abc/, "XYZ", s); print s}'
+
+#全局替换
+awk 'BEGIN{print gsub("a", "x", "banana")}'   # 返回 3（替换次数），变量内容变为 bxnxnx
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#echo "2008:08:08 08:08:08" | awk 'sub(/:/,"-",$1)'
+2008-08:08 08:08:08
+[root@centos8 ~]#echo "2008:08:08 08:08:08" | awk '{sub(/:/,"-",$1);print $0}'
+2008-08:08 08:08:08
+
+[root@centos8 ~]#echo "2008:08:08 08:08:08" | awk 'gsub(/:/,"-",$0)'
+2008-08-08 08-08-08
+[root@centos8 ~]#echo "2008:08:08 08:08:08" | awk '{gsub(/:/,"-",$0);print $0}'
+2008-08-08 08-08-08
+```
+
+eg
+
+```bash
+[root@centos8 ~]#netstat -tn | awk '/^tcp/{split($5,ip,":");count[ip[1]]++}END{for(i in count){print i,count[i]}}'
+10.0.0.1 1
+10.0.0.6 1
+10.0.0.7 673
+```
+
+可以awk中调用shell命令
+
+```bash
+system('cmd')
+```
+
+空格是awk中的字符串连接符，如果system中需要使用awk中的变量可以使用空格分隔，或者说除了awk的变量外其他一律用""引用起来
+
+```bash
+awk 'BEGIN{system("hostname")}'
+awk 'BEGIN{score=100; system("echo your score is " score) }'
+[root@centos8 ~]#netstat -tn | awk '/^tcp/{split($5,ip,":");count[ip[1]]++}END{for(i in count){if(count[i]>=10){system("iptables -A INPUT -s "i" -j REJECT")}}}'
+```
+
+**时间函数**
+
+```bash
+systime() 当前时间到1970年1月1日的秒数
+strftime() 指定时间格式 
+```
+
+eg
+
+```bash
+[root@centos8 ~]#awk 'BEGIN{print systime()}'
+1609917829
+[root@centos8 ~]#awk 'BEGIN{print strftime("%Y-%m-%dT%H:%M",systime()-3600)}'
+2021-01-06T14:24
+```
+
+##### **自定义函数**
+
+自定义函数格式:
+
+```bash
+function name ( parameter, parameter, ... ) {
+  statements
+  return expression
+}
+```
+
+范例:
+
+```bash
+[root@centos8 ~]#cat func.awk
+function max(x,y) {
+ x>y?var=x:var=y
+ return var
+}
+BEGIN{print max(a,b)}
+[root@centos8 ~]#awk -v a=30 -v b=20 -f func.awk
+30
+```
+
+#### **awk** **脚本**
+
+将awk程序写成脚本，直接调用或执行
+
+范例:
+
+```bash
+[root@centos8 ~]#cat passwd.awk 
+{if($3>=1000)print $1,$3}
+[root@centos8 ~]#awk -F: -f passwd.awk /etc/passwd
+nobody 65534
+wang 1000
+mage 1001
+```
+
+eg
+
+```bash
+[root@centos8 ~]#cat test.awk
+#!/bin/awk -f
+#this is a awk script
+{if($3>=1000)print $1,$3}
+[root@centos8 ~]#chmod +x test.awk
+[root@centos8 ~]#./test.awk -F: /etc/passwd
+nobody 65534
+wang 1000
+mage 1001
+```
+
+向awk脚本传递参数
+
+格式:
+
+```bash
+awkfile var=value var2=value2... Inputfile
+```
+
+注意:
+
+- 上面格式变量在BEGIN过程中不可用。直到首行输入完成以后，变量才可用
+- 可以通过-v 参数，让awk在执行BEGIN之前得到变量的值
+- 命令行中每一个指定的变量都需要一个-v参数
+
+范例:
+
+```bash
+[root@rocky8 ~]#awk -v x=100 'BEGIN{print x}{print x+100}' /etc/hosts
+100
+200
+200
+[root@rocky8 ~]#awk 'BEGIN{print x}{print x+100}' x=200 /etc/hosts
+300
+300
+
+
+[root@centos8 ~]#cat test2.awk 
+#!/bin/awk -f
+{if($3 >=min && $3<=max)print $1,$3} 
+[root@centos8 ~]#chmod +x test2.awk
+[root@centos8 ~]#./test2.awk -F: min=100 max=200 /etc/passwd
+systemd-resolve 193
+rtkit 172
+pulse 171
+qemu 107
+usbmuxd 113
+abrt 173
+```
+
+范例: 检查出最近一小时内访问nginx服务次数超过3次的客户端IP
+
+```bash
+[root@VM_0_10_centos ~]# cat check_nginx_log.awk 
+#!/usr/bin/awk -f
+BEGIN {
+ beg=strftime("%Y-%m-%dT%H:%M",systime()-3600) ;
+ #定义一个小时前的时间，并格式化日期格式
+ end=strftime( "%Y-%m-%dT%H:%M",systime()-60) ;
+ #定义结束时间
+ #print beg;
+ #print end;
+}
+$4 > beg && $4 < end {#定义取这个时间段内的日志
+ count[$12]+=1;#利用ip当做数组下标，次数当做数组内容
+}
+END {
+ for(i in count){#结束从数组取数据代表数组的下标，也就是ip
+ if(count[i]>3) { #如果次数大于3次，做操作
+ print count [i]" "i;
+ #system("iptables -I INPUT -S"i"j DROP" )
+ }
+ }
+}
+#awk -F'"' -f check_nginx_log.awk /apps/nginx/logs/access.log
+[root@VM_0_10_centos ~]# head /apps/nginx/logs/access_json.log -n3
+{"@timestamp":"2020-06-
+09T17:12:13+08:00","host":"172.21.0.10","clientip":"58.87.87.99","size":0,"respo
+nsetime":0.001,"upstreamtime":"0.001","upstreamhost":"127.0.0.1:9000","http_host
+":"www.wangxiaochun.com","uri":"/wp-cron.php","domain":"www.wangxiaochun.com","xff":"-","referer":"-
+","tcp_xff":"","http_user_agent":"WordPress/5.3.2; 
+http://www.wangxiaochun.com","status":"499"}
+{"@timestamp":"2020-06-
+09T17:12:13+08:00","host":"127.0.0.1","clientip":"127.0.0.1","size":0,"responset
+ime":0.060,"upstreamtime":"0.060","upstreamhost":"127.0.0.1:9000","http_host":"1
+27.0.0.1","uri":"/index.php","domain":"127.0.0.1","xff":"-","referer":"-
+","tcp_xff":"","http_user_agent":"curl/7.29.0","status":"200"}
+{"@timestamp":"2020-06-
+09T17:12:14+08:00","host":"127.0.0.1","clientip":"127.0.0.1","size":0,"responset
+ime":0.022,"upstreamtime":"0.022","upstreamhost":"127.0.0.1:9000","http_host":"1
+27.0.0.1","uri":"/index.php","domain":"127.0.0.1","xff":"-","referer":"-
+","tcp_xff":"","http_user_agent":"curl/7.29.0","status":"200"}
+[root@VM_0_10_centos ~]# awk -F'"' -f check_nginx_log.awk 
+/apps/nginx/logs/access_json.log
+4 127.0.0.1
+56 172.105.120.92
+5 58.87.87.99
+11 111.199.184.16
+```
+
+**练习**
+
+1、文件host\_list.log 如下格式，请提取".magedu.com"前面的主机名部分并写入到回到该文件中
+
+```bash
+1 www.magedu.com
+2 blog.magedu.com
+3 study.magedu.com
+4 linux.magedu.com
+5 python.magedu.com
+......
+999 study.magedu.com
+```
+
+参考答案:
+
+```bash
+[root@centos8 ~]# awk -F'[ .]' '{print $2}' host_list.log >> host_list.log 
+[root@centos8 ~]# cat host_list.log 
+1 www.magedu.com
+1 www.magedu.com
+2 blog.magedu.com
+3 study.magedu.com
+4 linux.magedu.com
+5 python.magedu.com
+......
+999 study.magedu.com
+www
+blog
+study
+linux
+python
+```
+
+2、统计/etc/fstab文件中每个文件系统类型出现的次数
+
+```bash
+[root@ubuntu1804 ~]#awk -F' +' '/^UUID/{fs[$3]++}END{for(i in fs){print 
+i,fs[i]}}' /etc/fstab
+swap 1
+ext4 3
+[root@ubuntu1804 ~]#awk -F' +' '/^UUID/{print $3}' /etc/fstab |uniq -c
+   3 ext4
+   1 swap
+```
+
+3、统计/etc/fstab文件中每个单词出现的次数
+
+参考答案
+
+```bash
+[root@ubuntu1804 ~]#awk -F"[^[:alpha:]]" '{for(i=1;i<=NF;i++)word[$i]++}END{for 
+(a in word)if(a !="") print a,word[a]}'  /etc/fstab
+```
+
+4、提取出字符串Yd\$C@M05MB%9&Bdh7dq\+YVixp3vpw中的所有数字
+
+参考答案
+
+```bash
+[root@ubuntu1804 ~]#echo 'Yd$C@M05MB%9&Bdh7dq+YVixp3vpw' | awk '{gsub(/[^0-
+9]/,"");print $0}'
+05973
+[root@ubuntu1804 ~]#echo 'Yd$C@M05MB%9&Bdh7dq+YVixp3vpw' |awk -F "" 
+'{for(i=1;i<=NF;i++){if ($i ~ /[[:digit:]]/){str=$i; str1=(str1 str)}};print 
+str1}'
+[root@ubuntu1804 ~]#echo 'Yd$C@M05MB%9&Bdh7dq+YVixp3vpw' | awk -F'[^0-9]' 
+'{for(i=1;i<=NF;i++){printf "%s",$i }}'
+05973
+```
+
+5、文件random.txt记录共5000个随机的整数，存储的格式100,50,35,89…请取出其中最大和最小的整
+
+数
+
+参考答案
+
+```bash
+[root@ubuntu1804 ~]#str="";for((i=1;i<=5000;i++));do if [ $i -ne 5000 ];then 
+str+="$RANDOM,";else str+=$RANDOM;fi;done;echo $str > random.txt
+[root@ubuntu1804 ~]#awk -F, '{max=$1;min=$1;for(i=1;i<=NF;i++){if($i>max)
+{max=$i}else{if($i<min){min=$i}}}}END{print "最大值: "max,"最 小值: "min}' 
+random.txt
+```
+
+6、解决Dos攻击生产案例: 监控当某个IP并发连接数超过100时，即调用防火墙命令封掉对应的IP，监控频率每隔5分钟。防火墙命令为: iptables -A INPUT -s IP -j REJECT
+
+参考答案
+
+```bash
+[root@ubuntu1804 ~]#ss -nt | awk -F " +|:" 'NR!=1{ip[$(NF-2)]++}END{for(i in ip)
+{if(ip[i]>100){system("iptables -A INPUT -s "i" -j REJECT")}}}'
+```
+
+7、将以下文件内容中FQDN取出并根据其进行计数从高到低排序
+
+```bash
+http://mail.magedu.com/index.html
+http://www.magedu.com/test.html
+http://study.magedu.com/index.html
+http://blog.magedu.com/index.html
+http://www.magedu.com/images/logo.jpg
+http://blog.magedu.com/20080102.html
+http://www.magedu.com/images/magedu.jpg
+```
+
+```bash
+[root@centos8 ~]#awk -F"/" '{url[$3]++}END{for(i in url){print url[i],i}}' 
+url.log |sort -nr
+3 www.magedu.com
+2 blog.magedu.com
+1 study.magedu.com
+1 mail.magedu.com
+```
+
+8、将以下文本文件awktest.txt中 以inode列为标记，对inode列相同的counts列进行累加，并且统计出同一inode中，beginnumber列中的最小值和endnumber列中的最大值
+
+```bash
+inode|beginnumber|endnumber|counts|
+106|3363120000|3363129999|10000|
+106|3368560000|3368579999|20000|
+310|3337000000|3337000100|101|
+310|3342950000|3342959999|10000|
+310|3362120960|3362120961|2|
+311|3313460102|3313469999|9898|
+311|3313470000|3313499999|30000|
+311|3362120962|3362120963|2|
+```
+
+输出的结果格式为:
+
+```bash
+106|3363120000|3368579999|30000|
+310|3337000000|3362120961|10103|
+311|3313460102|3362120963|39900|
+```
+
+答案
+
+```bash
+[root@centos8 ~]#cat awktest.txt
+inode|beginnumber|endnumber|counts|
+106|3363120000|3363129999|10000|
+106|3368560000|3368579999|20000|
+310|3337000000|3337000100|101|
+310|3342950000|3342959999|10000|
+310|3362120960|3362120961|2|
+311|3313460102|3313469999|9898|
+311|3313470000|3313499999|30000|
+311|3362120962|3362120963|2|
+[root@centos8 ~]#awk -F '|' '!/^inode/{sum[$1]+=$4;
+if(!begin[$1])begin[$1]=$2;else if(begin[$1]>$2)begin[$1]=$2;
+if(!end[$1])end[$1]=$3;else if(end[$1]<$3)end[$1]=$3}
+END{for(i in sum)print i"|"begin[i]"|"end[i]"|"sum[i]}' awktest.txt
+[root@centos8 ~]#awk -F'|' -v OFS='|' '/^[0-9]/{inode[$1]++; if(!bn[$1])
+{bn[$1]=$2}else if(bn[$1]>$2){bn[$1]=$2}; if(en[$1]<$3)en[$1]=$3;cnt[$1]+=$(NF-
+1)} END{for(i in inode)print i,bn[i],en[i],cnt[i]}' awktest.txt
+```
