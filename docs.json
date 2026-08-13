@@ -35,9 +35,9 @@
         }
       ]
     },
-    "dropdowns": [
+    "anchors": [
       {
-        "dropdown": "运维笔记",
+        "anchor": "运维笔记",
         "icon": "cloud",
         "groups": [
           {
