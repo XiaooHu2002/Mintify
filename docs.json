@@ -38,8 +38,13 @@
     "languages": [
       {
         "language": "zh-CN",
-        "pages": [
-          "userGroup"
+        "groups": [
+          {
+            "group": "基础运维",
+            "pages": [
+              "userGroup"
+            ]
+          }
         ]
       }
     ]
