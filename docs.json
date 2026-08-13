@@ -25,7 +25,6 @@
       "anchors": [
         {
           "anchor": "严千屹博客",
-          "icon": "cloud",
           "href": "https://blog.qianyios.top"
         }
       ]
@@ -46,12 +45,7 @@
     "dark": "/images/fluid.png"
   },
   "navbar": {
-    "links": [
-      {
-        "href": "https://blog.qianyios.top",
-        "label": "严千屹博客"
-      }
-    ],
+    "links": [],
     "primary": {
       "type": "button",
       "label": "Dashboard",
