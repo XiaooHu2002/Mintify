@@ -2,26 +2,6 @@
 title: "用户、组和权限"
 ---
 
-\<meta name="referrer" content="no-referrer"\>
-
-```html
-<meta name="referrer" content="no-referrer">
-```
-
-\[Linux的安全模型\](#Linux安全模型)
-
-**用户和组相关文件**
-
-**用户和组管理命令**
-
-**理解并设置文件权限**
-
-**默认权限**
-
-**特殊权限**
-
-**文件访问控制列表**
-
 ## Linux安全模型
 
 资源分派：
@@ -463,7 +443,9 @@ bin
 
 ### 设置密码
 
-![Snipaste\_2025-07-02\_17-52-50](https://i0.hdslb.com/bfs/openplatform/ee11f4a6be39fda3661d4f4d96954a7e2c4ce3fb.png)
+<Frame>
+  ![Snipaste 2025 07 02 17 52 50](/images/Snipaste_2025-07-02_17-52-50.png "Snipaste 2025 07 02 17 52 50")
+</Frame>
 
 passwd 可以修改用户密码
 
@@ -820,7 +802,9 @@ echo 123456 | passwd --stdin mysql
 - 进程的发起者，属于文件属组；则应用文件属组权限
 - 应用文件“其它”权限
 
-![image-20250702182635536](https://i0.hdslb.com/bfs/openplatform/98bc1419a92369490927ed2a7d37a60adae97452.png)
+<Frame>
+  ![Image 20250702182635536](/images/image-20250702182635536.png "Image 20250702182635536")
+</Frame>
 
 ### **文件所有者和属组属性操作**
 
@@ -990,7 +974,9 @@ Linux中的目录和文件的权限区别？分别说明读，写和执行权限
 
 总结来说，文件的执行权限用于运行文件，而目录的执行权限用于访问目录
 
-![image-20250702184038427](https://i0.hdslb.com/bfs/openplatform/0cee7b651216107843033046ef20e5061e4b400e.png)
+<Frame>
+  ![Image 20250702184038427](/images/image-20250702184038427.png "Image 20250702184038427")
+</Frame>
 
 八进制数字
 
