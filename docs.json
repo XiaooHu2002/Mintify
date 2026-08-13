@@ -83,5 +83,12 @@
   },
   "interaction": {
     "drilldown": false
+  },
+  "seo": {
+    "metatags": {
+      "docs": "严千屹",
+      "doc": "严千屹",
+      "seo": "严千屹"
+    }
   }
 }
