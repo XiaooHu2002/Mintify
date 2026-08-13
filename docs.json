@@ -32,7 +32,14 @@
         }
       ]
     },
-    "groups": []
+    "languages": [
+      {
+        "language": "zh-CN",
+        "pages": [
+          "untitled-page-2"
+        ]
+      }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
