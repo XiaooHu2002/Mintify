@@ -29,15 +29,16 @@
         }
       ]
     },
-    "groups": [
+    "tabs": [
       {
-        "group": "运维笔记",
-        "icon": "book-open-alt",
+        "tab": "运维笔记",
+        "icon": "book-open-cover",
         "pages": [
           {
             "group": "基础运维",
             "icon": "cloud",
             "pages": [
+              "userGroup",
               "基础运维笔记/filemanage"
             ]
           },
