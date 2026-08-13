@@ -38,8 +38,8 @@
           {
             "group": "基础运维",
             "pages": [
-              "userGroup",
-              "filemanage"
+              "基础运维笔记/userGroup",
+              "基础运维笔记/filemanage"
             ]
           }
         ]
@@ -47,7 +47,7 @@
       {
         "dropdown": "wer",
         "pages": [
-          "userGroup"
+          "基础运维笔记/userGroup"
         ]
       }
     ]
