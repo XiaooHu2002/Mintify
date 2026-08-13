@@ -31,20 +31,19 @@
     },
     "groups": [
       {
-        "group": "基础运维",
-        "icon": "cloud",
+        "group": "运维笔记",
+        "icon": "book-open-alt",
         "pages": [
-          "基础运维笔记/userGroup",
-          "基础运维笔记/filemanage"
-        ]
-      },
-      {
-        "group": "K8S",
-        "icon": "box",
-        "pages": [
-          "基础运维笔记/userGroup",
           {
-            "group": "Untitled Group",
+            "group": "基础运维",
+            "icon": "cloud",
+            "pages": [
+              "基础运维笔记/filemanage"
+            ]
+          },
+          {
+            "group": "K8S",
+            "icon": "box",
             "pages": []
           }
         ]
