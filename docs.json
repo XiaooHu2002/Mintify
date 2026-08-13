@@ -32,20 +32,10 @@
     },
     "groups": [
       {
-        "group": "运维笔记",
+        "group": "基础运维",
+        "icon": "cloud",
         "pages": [
-          {
-            "group": "基础运维",
-            "pages": [
-              "基础运维笔记/userGroup",
-              "基础运维笔记/filemanage"
-            ]
-          }
-        ]
-      },
-      {
-        "group": "abc",
-        "pages": [
+          "基础运维笔记/userGroup",
           "基础运维笔记/filemanage"
         ]
       }
