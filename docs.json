@@ -39,13 +39,15 @@
             "pages": [
               "basic-ops/untitled-page",
               "basic-ops/filemanage",
-              "text-regex"
+              "basic-ops/text-regex"
             ]
           },
           {
             "group": "K8S",
             "icon": "box",
-            "pages": []
+            "pages": [
+              "untitled-page"
+            ]
           }
         ]
       }
