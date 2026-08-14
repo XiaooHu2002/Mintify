@@ -84,5 +84,11 @@
       "doc": "严千屹",
       "seo": "严千屹"
     }
+  },
+  "background": {
+    "color": {
+      "light": "#000000",
+      "dark": "#eeeff3"
+    }
   }
 }
